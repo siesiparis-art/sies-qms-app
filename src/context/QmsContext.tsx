@@ -1021,6 +1021,9 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               let cleanCloudPool: any[] = [];
               if (key === 'qms_orders') {
                 cleanCloudPool = mergeById(localItems, cloudData, delOrdersSet);
+                if (cleanCloudPool.length === 0 && (!store['qms_orders'] || store['qms_orders'].length === 0)) {
+                  cleanCloudPool = generateDefaultOrders(products);
+                }
               } else if (key === 'qms_quotes') {
                 cleanCloudPool = cloudData.length > 0 ? cloudData.filter(q => q && q.id && !delQuotesSet.has(String(q.id).toLowerCase())) : localItems;
               } else {
