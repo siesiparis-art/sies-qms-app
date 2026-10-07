@@ -853,14 +853,29 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Smart Merge Helper for multi-device sync
   const mergeById = (arr1: any[], arr2: any[], deletedSet: Set<string> = new Set()) => {
+    // Collect active order IDs from incoming arrays so active orders are NEVER blocked by stale local tombstones
+    const activeOrderIds = new Set<string>();
+    [...(arr1 || []), ...(arr2 || [])].forEach(item => {
+      if (item && item.id) activeOrderIds.add(String(item.id).trim().toLowerCase());
+      if (item && item.customerOrderNo) activeOrderIds.add(String(item.customerOrderNo).trim().toLowerCase());
+    });
+
     let delList: string[] = [];
     try {
       const rawDel = localStorage.getItem('qms_deleted_orders');
       delList = rawDel ? JSON.parse(rawDel) : [];
     } catch (e) {}
 
-    // Auto-clean stale SIES2026 tombstones from local storage
-    const cleanedDelList = delList.filter(s => s && typeof s === 'string' && !s.toLowerCase().trim().startsWith('sies2026'));
+    // Auto-clean stale tombstones from local storage
+    const cleanedDelList = delList.filter(s => {
+      if (!s || typeof s !== 'string') return false;
+      const clean = s.toLowerCase().trim();
+      if (clean === '') return false;
+      if (activeOrderIds.has(clean)) return false; // Never tombstone an active order!
+      if (clean.startsWith('sies2026') || clean.startsWith('deneme') || clean.startsWith('test-2026')) return false;
+      return true;
+    });
+
     if (cleanedDelList.length !== delList.length && typeof window !== 'undefined') {
       try {
         localStorage.setItem('qms_deleted_orders', JSON.stringify(cleanedDelList));
@@ -871,7 +886,9 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [...cleanedDelList, ...Array.from(deletedSet)].forEach(s => {
       if (s && typeof s === 'string') {
         const cleanStr = s.trim().toLowerCase();
-        if (cleanStr !== '' && !cleanStr.startsWith('sies2026')) tombSet.add(cleanStr);
+        if (cleanStr !== '' && !activeOrderIds.has(cleanStr) && !cleanStr.startsWith('sies2026') && !cleanStr.startsWith('deneme') && !cleanStr.startsWith('test-2026')) {
+          tombSet.add(cleanStr);
+        }
       }
     });
 
@@ -1317,9 +1334,17 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setNonconformities(JSON.parse(localStorage.getItem('qms_nonconformities') || '[]'));
         setManagementReviews(JSON.parse(localStorage.getItem('qms_management_reviews') || '[]'));
 
-        // Load Tombstones (filtering out stale SIES2026 tombstones)
+        // Load Tombstones (filtering out stale master and test tombstones)
         const rawDelOrders: string[] = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
-        const cleanDelOrders = rawDelOrders.filter(id => id && typeof id === 'string' && !id.toLowerCase().trim().startsWith('sies2026'));
+        const cleanDelOrders = rawDelOrders.filter(id => {
+          if (!id || typeof id !== 'string') return false;
+          const clean = id.toLowerCase().trim();
+          if (clean === '' || clean.startsWith('sies2026') || clean.startsWith('deneme') || clean.startsWith('test-2026')) return false;
+          return true;
+        });
+        try {
+          localStorage.setItem('qms_deleted_orders', JSON.stringify(cleanDelOrders));
+        } catch (e) {}
         const delOrdersSet = new Set<string>(cleanDelOrders);
         const delQuotesSet = new Set<string>(JSON.parse(localStorage.getItem('qms_deleted_quotes') || '[]'));
 
@@ -1335,7 +1360,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const loadedRuns = JSON.parse(localStorage.getItem('qms_production_runs') || '[]');
         setProductionRuns(loadedRuns);
 
-        // Initialize quotes & orders filtered by tombstones
+        // Initialize quotes & orders
         const loadedQuotes = JSON.parse(localStorage.getItem('qms_quotes') || '[]')
           .filter((q: any) => q && q.id && !delQuotesSet.has(q.id));
         setQuotes(loadedQuotes);
