@@ -1,0 +1,218 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --primary-orange: #f97316;
+  --primary-orange-hover: #ea580c;
+  --primary-orange-muted: rgba(249, 115, 22, 0.1);
+  --text-muted: #64748b;
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card-bg);
+  --color-orange-brand: var(--primary-orange);
+  --color-orange-brand-hover: var(--primary-orange-hover);
+  --color-orange-muted: var(--primary-orange-muted);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar for Light Theme & WhatsApp Style List */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-orange);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+  border: 1px solid #f1f5f9;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #f97316;
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+.glow-orange {
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.08);
+}
+
+.pulse-glow-orange {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Print Styles for A4 Portrait, Landscape, and Honeywell Label Previews */
+@media print {
+  /* 1. Reset root layout containers */
+  html, body {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* 2. Hide all non-printable UI components cleanly with display: none */
+  header,
+  aside,
+  nav,
+  .print\:hidden,
+  .no-print,
+  button:not(.print-include) {
+    display: none !important;
+  }
+
+  /* 3. Reset Next.js page wrappers, flex containers, and modal backdrops */
+  div.flex.h-screen.overflow-hidden,
+  div.flex-1.flex.flex-col.min-w-0,
+  main.flex-1,
+  div.fixed.inset-0,
+  div.w-full.h-full.flex.flex-col,
+  div.w-full.min-h-screen.flex.flex-col {
+    position: static !important;
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    transform: none !important;
+  }
+
+  /* 4. Natural page layout for printable document cards */
+  .print-area {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    margin: 0 auto !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  /* 5. Honeywell label specific print layout */
+  .honeywell-label-50-100 {
+    display: block !important;
+    position: relative !important;
+    margin: 0 auto !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100mm !important;
+    height: 50mm !important;
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+  }
+
+  /* 6. Document-specific styling (tables, headings) */
+  table {
+    page-break-inside: auto !important;
+  }
+  tr, .break-inside-avoid, .print-break-inside-avoid {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  h1, h2, h3 {
+    page-break-after: avoid !important;
+  }
+}
+
+/* Named page layouts for portrait and landscape control */
+@page portrait-layout {
+  size: A4 portrait;
+  margin: 6mm;
+}
+
+@page landscape-layout {
+  size: A4 landscape;
+  margin: 6mm;
+}
+
+.print-portrait {
+  page: portrait-layout !important;
+}
+
+.print-landscape {
+  page: landscape-layout !important;
+}
+
+/* Global uppercase rule for everything - SIES Request */
+body, input, textarea, select, button, span, div, p, th, td, h1, h2, h3, h4, h5, h6, option, a, li, label {
+  text-transform: uppercase !important;
+}
+
+input::placeholder, textarea::placeholder {
+  text-transform: uppercase !important;
+}
