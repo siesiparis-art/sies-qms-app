@@ -1012,7 +1012,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const updatedStore = { ...store };
 
             for (const key of syncKeys) {
-              const cloudData = Array.isArray(store[key]) ? store[key] : [];
+              const cloudData = Array.isArray(store[key]) ? store[key] : null;
               let localItems: any[] = [];
               try {
                 const raw = localStorage.getItem(key);
@@ -1020,21 +1020,25 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               } catch (e) {}
 
               let cleanCloudPool: any[] = [];
-              if (key === 'qms_orders') {
-                cleanCloudPool = mergeById(localItems, cloudData, delOrdersSet);
-                if (cleanCloudPool.length === 0 && (!store['qms_orders'] || store['qms_orders'].length === 0)) {
-                  cleanCloudPool = generateDefaultOrders(products);
-                }
-              } else if (key === 'qms_quotes') {
-                cleanCloudPool = cloudData.length > 0 ? cloudData.filter(q => q && q.id && !delQuotesSet.has(String(q.id).toLowerCase())) : localItems;
-              } else {
-                cleanCloudPool = cloudData.length > 0 ? cloudData.filter(item => item && item.id) : localItems;
+
+              if (cloudData && cloudData.length > 0) {
+                // AUTHORITATIVE CLOUD MODE: Yandex Disk is single source of truth for all PCs
+                cleanCloudPool = cloudData;
+              } else if (localItems && localItems.length > 0) {
+                // LOCAL SEED MODE: Upload local state to cloud if cloud is empty
+                cleanCloudPool = localItems;
+                updatedStore[key] = localItems;
+                storeUpdated = true;
+              } else if (key === 'qms_orders') {
+                cleanCloudPool = generateDefaultOrders(products);
+                updatedStore[key] = cleanCloudPool;
+                storeUpdated = true;
               }
 
               const jsonStr = JSON.stringify(cleanCloudPool);
               const localRaw = localStorage.getItem(key);
 
-              if (localRaw !== jsonStr || localItems.length === 0) {
+              if (localRaw !== jsonStr) {
                 try {
                   localStorage.setItem(key, jsonStr);
                 } catch (e) {}
@@ -1053,12 +1057,6 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 if (key === 'qms_capas') setCapas(cleanCloudPool);
                 if (key === 'qms_complaints') setComplaints(cleanCloudPool);
               }
-
-              // If local merged pool differs from cloud, update cloud store
-              if (JSON.stringify(cleanCloudPool) !== JSON.stringify(cloudData) && cleanCloudPool.length > 0) {
-                updatedStore[key] = cleanCloudPool;
-                storeUpdated = true;
-              }
             }
 
             if (storeUpdated) {
@@ -1073,7 +1071,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     pollCloudSync();
-    const interval = setInterval(pollCloudSync, 8000);
+    const interval = setInterval(pollCloudSync, 3000);
     return () => clearInterval(interval);
   }, []);
 
