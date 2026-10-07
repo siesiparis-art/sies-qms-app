@@ -1037,27 +1037,23 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
 
               const jsonStr = JSON.stringify(cleanCloudPool);
-              const localRaw = localStorage.getItem(key);
+              try {
+                localStorage.setItem(key, jsonStr);
+              } catch (e) {}
 
-              if (localRaw !== jsonStr) {
-                try {
-                  localStorage.setItem(key, jsonStr);
-                } catch (e) {}
-
-                // Instantly update React state on every PC from authoritative merged store
-                if (key === 'qms_orders') setOrders(cleanCloudPool);
-                if (key === 'qms_quotes') setQuotes(cleanCloudPool);
-                if (key === 'qms_production_runs') setProductionRuns(cleanCloudPool);
-                if (key === 'qms_certificates') setCertificates(cleanCloudPool);
-                if (key === 'qms_measuring_devices') setMeasuringDevices(cleanCloudPool);
-                if (key === 'qms_incoming') setIncomingInspections(cleanCloudPool);
-                if (key === 'qms_outgoing') setOutgoingInspections(cleanCloudPool);
-                if (key === 'qms_customers') setCustomers(cleanCloudPool);
-                if (key === 'qms_suppliers') setSuppliers(cleanCloudPool);
-                if (key === 'qms_products') setProducts(cleanCloudPool);
-                if (key === 'qms_capas') setCapas(cleanCloudPool);
-                if (key === 'qms_complaints') setComplaints(cleanCloudPool);
-              }
+              // Instantly update React state on every PC from authoritative merged store
+              if (key === 'qms_orders') setOrders(cleanCloudPool);
+              if (key === 'qms_quotes') setQuotes(cleanCloudPool);
+              if (key === 'qms_production_runs') setProductionRuns(cleanCloudPool);
+              if (key === 'qms_certificates') setCertificates(cleanCloudPool);
+              if (key === 'qms_measuring_devices') setMeasuringDevices(cleanCloudPool);
+              if (key === 'qms_incoming') setIncomingInspections(cleanCloudPool);
+              if (key === 'qms_outgoing') setOutgoingInspections(cleanCloudPool);
+              if (key === 'qms_customers') setCustomers(cleanCloudPool);
+              if (key === 'qms_suppliers') setSuppliers(cleanCloudPool);
+              if (key === 'qms_products') setProducts(cleanCloudPool);
+              if (key === 'qms_capas') setCapas(cleanCloudPool);
+              if (key === 'qms_complaints') setComplaints(cleanCloudPool);
             }
 
             if (storeUpdated) {
@@ -1124,20 +1120,16 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const syncWithBackend = async () => {
       try {
-        const res = await fetch('/api/sync?t=' + Date.now(), { cache: 'no-store' }).catch(() => null);
-        if (res && res.ok) {
-          const body = await res.json().catch(() => null);
-          if (body && body.store && typeof body.store === 'object') {
-            const store = body.store;
-            Object.keys(store).forEach((key) => {
-              if (store[key] !== undefined && store[key] !== null) {
-                try {
-                  const strVal = typeof store[key] === 'string' ? store[key] : JSON.stringify(store[key]);
-                  localStorage.setItem(key, strVal);
-                } catch (e) {}
-              }
-            });
-          }
+        const store: any = await fetchDirectFromYandexDisk();
+        if (store && typeof store === 'object') {
+          Object.keys(store).forEach((key) => {
+            if (store[key] !== undefined && store[key] !== null) {
+              try {
+                const strVal = typeof store[key] === 'string' ? store[key] : JSON.stringify(store[key]);
+                localStorage.setItem(key, strVal);
+              } catch (e) {}
+            }
+          });
         }
       } catch (e) {
         console.error('Yandex Cloud sync error:', e);
