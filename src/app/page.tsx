@@ -241,7 +241,7 @@ export default function Home() {
           >
             <div>
               <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
-                <img src="/sies_logo.png" alt="SIES Logo" className="h-8 object-contain" />
+                <img src="sies_logo.png" alt="SIES Logo" className="h-8 object-contain" />
                 <button 
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 bg-slate-100"
@@ -305,9 +305,9 @@ export default function Home() {
             !isSidebarExpanded ? 'flex-col justify-center' : ''
           }`}>
             {isSidebarExpanded ? (
-              <img src="/sies_logo.png" alt="SIES Logo" className="h-10 object-contain" />
+              <img src="sies_logo.png" alt="SIES Logo" className="h-10 object-contain" />
             ) : (
-              <img src="/sies_logo.png" alt="SIES Logo" className="h-6 object-contain" />
+              <img src="sies_logo.png" alt="SIES Logo" className="h-6 object-contain" />
             )}
             <button 
               onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
@@ -418,7 +418,7 @@ export default function Home() {
               <Menu className="h-5 w-5" />
             </button>
 
-            <img src="/sies_logo.png" alt="SIES Logo" className="h-7 object-contain md:hidden" />
+            <img src="sies_logo.png" alt="SIES Logo" className="h-7 object-contain md:hidden" />
             <div className="h-4 w-[1px] bg-slate-200 hidden sm:block"></div>
           </div>
 

@@ -1013,11 +1013,17 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       isPollingInProgress = true;
       try {
+        let store: any = null;
         const res = await fetch(`/api/sync?t=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
         if (res && res.ok) {
           const body = await res.json().catch(() => null);
-          const store = body?.store;
-          if (store && typeof store === 'object') {
+          store = body?.store;
+        }
+        if (!store || typeof store !== 'object') {
+          store = await fetchDirectFromYandexDisk();
+        }
+
+        if (store && typeof store === 'object') {
             const cloudDelOrders: string[] = Array.isArray(store.qms_deleted_orders) ? store.qms_deleted_orders : [];
             const cloudDelQuotes: string[] = Array.isArray(store.qms_deleted_quotes) ? store.qms_deleted_quotes : [];
             
@@ -1077,7 +1083,6 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
             }
           }
-        }
       } catch (err) {
         // Silent catch
       } finally {

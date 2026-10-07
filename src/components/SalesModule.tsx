@@ -3090,7 +3090,7 @@ export default function SalesModule({
                                             {/* SIES Corporate Header */}
                       <div className="border-b-2 border-[#1f4e5b] pb-4 flex justify-between items-center">
                         <div className="flex items-center">
-                          <img src="/sies_logo.png" alt="SIES Logo" className="h-16 object-contain" />
+                          <img src="sies_logo.png" alt="SIES Logo" className="h-16 object-contain" />
                         </div>
                         <div className="text-right">
                           <h2 className="font-extrabold text-base uppercase tracking-wide text-[#1f4e5b]">MÜŞTERİ TEKLİF / SİPARİŞ FORMU</h2>
@@ -4890,7 +4890,7 @@ export default function SalesModule({
                     {/* SIES Corporate Header */}
                     <div className="border-b-2 border-orange-500 pb-4 flex justify-between items-center">
                       <div className="flex items-center">
-                        <img src="/sies_logo.png" alt="SIES Logo" className="h-14 object-contain" />
+                        <img src="sies_logo.png" alt="SIES Logo" className="h-14 object-contain" />
                       </div>
                       <div className="text-right">
                         <h2 className="font-extrabold text-sm uppercase tracking-wide text-orange-600">YENİ TEKLİF FORMU (DÜZENLEME MODU)</h2>
@@ -5644,7 +5644,7 @@ export default function SalesModule({
                     {/* Header */}
                     <div className="flex justify-between items-start border-b border-slate-300 pb-4 mb-6">
                       <div className="flex flex-col">
-                        <img src="/sies_logo.png" alt="SIES Logo" className="h-10 object-contain w-fit" />
+                        <img src="sies_logo.png" alt="SIES Logo" className="h-10 object-contain w-fit" />
                         <span className="text-[10px] text-slate-500 uppercase font-bold mt-1">SIES ELEKTRİK TAAHHÜT SAN. VE TİC. A.Ş.</span>
                         <span className="text-[8px] text-slate-405 mt-1 max-w-xs leading-tight">
                           Dilovası Organize Sanayi Bölgesi 4. Kısım Sakarya Cad. No: 18 Dilovası / KOCAELİ<br />
@@ -5802,7 +5802,7 @@ export default function SalesModule({
                         {/* Header Box */}
                         <div className="border-2 border-slate-950 grid grid-cols-4 text-center items-center text-xs font-bold mb-4">
                           <div className="p-2 border-r-2 border-slate-950 flex flex-col justify-center items-center">
-                            <img src="/sies_logo.png" alt="SIES Logo" className="h-12 object-contain" />
+                            <img src="sies_logo.png" alt="SIES Logo" className="h-12 object-contain" />
                           </div>
                           <div className="p-2 border-r-2 border-slate-950 col-span-2 text-center uppercase text-slate-950 text-sm sm:text-base font-black tracking-wide">
                             İMALAT TAKİP VE PROSES MUAYENE KARTI<br />
@@ -6050,7 +6050,7 @@ export default function SalesModule({
                   <div>
                     <div className="flex justify-between items-center border border-slate-200 mb-3 text-[9px] font-sans">
                       <div className="p-2 border-r border-slate-950 flex flex-col justify-center items-center w-[180px] shrink-0 text-center">
-                        <img src="/sies_logo.png" alt="SIES Logo" className="h-8 object-contain" />
+                        <img src="sies_logo.png" alt="SIES Logo" className="h-8 object-contain" />
                         <span className="text-[6px] text-slate-500 block uppercase mt-0.5">www.sies.com.tr / sies@sies.com.tr</span>
                       </div>
                       <div className="flex-1 text-center font-bold text-[14px] uppercase tracking-wide border-r border-slate-950 py-3 text-slate-900">
@@ -6493,7 +6493,7 @@ export default function SalesModule({
                 <div className="print-area print-portrait w-full max-w-[210mm] bg-white text-slate-800 p-8 shadow-lg border border-slate-300 rounded font-sans leading-normal mx-auto print:border-0 print:shadow-none print:p-2">
                   <div className="border-2 border-slate-900 grid grid-cols-4 text-center items-center text-[9px] font-bold mb-6">
                     <div className="p-2 border-r-2 border-slate-900 flex flex-col justify-center items-center">
-                      <img src="/sies_logo.png" alt="SIES Logo" className="h-6 object-contain" />
+                      <img src="sies_logo.png" alt="SIES Logo" className="h-6 object-contain" />
                       <span className="text-[5px] text-slate-500 uppercase mt-0.5">Kalite Kontrol</span>
                     </div>
                     <div className="p-2 border-r-2 border-slate-900 col-span-2 text-center uppercase text-slate-900 text-[10px] font-black tracking-wide">
