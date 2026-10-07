@@ -5015,132 +5015,126 @@ export function generateNextOrderNumber(existingOrders: Order[] = []): string {
 function generateDefaultOrders(prods: Product[]): Order[] {
   return [
     {
-      id: 'SIES20260001',
-      customerOrderNo: 'SIES20260001',
-      quoteId: 'TKF-2026-001',
-      customerName: 'AKYACHT YATÇILIK A.Ş.',
-      date: '2026-10-01',
+      id: 'SIES20260007',
+      customerOrderNo: 'SIES20260007',
+      quoteId: 'TKF-2026-007',
+      customerName: 'SİRENA MARİN',
+      date: '2026-10-07',
+      deliveryDate: '2026-10-09',
+      coatingTypes: ['ALÜMİNYUM'],
       externalCloudLink: YANDEX_DISK_URL,
       items: [
-        { productCode: 'SKK KAPAK', quantity: 150, shippedQuantity: 0, status: 'Üretimde' },
-        { productCode: 'SG 07-A', quantity: 50, shippedQuantity: 0, status: 'Bekliyor' }
-      ],
-      status: 'ÜRETİMDE',
-      notes: 'Acil imalat siparişi',
-      dispatches: []
-    },
-    {
-      id: 'SIES20260002',
-      customerOrderNo: 'SIES20260002',
-      quoteId: 'TKF-2026-002',
-      customerName: 'ANUŞ ELEKTRİK KEREM ANUŞ',
-      date: '2026-10-02',
-      externalCloudLink: YANDEX_DISK_URL,
-      items: [
-        { productCode: 'BB 8X15', quantity: 200, shippedQuantity: 0, status: 'Bekliyor' }
+        { productCode: 'Y03001157', description: 'ALÜMİNYUM KABLO KANALI, 250X25X2, DELİKLİ, ELEKTROSTATİK BOYALI, RENK: RAL9001', quantity: 22, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'Y03001158', description: 'ALÜMİNYUM KABLO KANALI, 150X25X2, DELİKLİ, ELEKTROSTATİK BOYALI, RENK: RAL9001', quantity: 4, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'Y03003203', description: 'ALÜMİNYUM KABLO KANALI, 350X25X2, DELİKLİ, ELEKTROSTATİK BOYALI, RENK: RAL9001', quantity: 2, shippedQuantity: 0, status: 'Bekliyor' }
       ],
       status: 'YENİ SİPARİŞ',
-      notes: 'Standart teslimat',
-      dispatches: []
-    },
-    {
-      id: 'SIES20260003',
-      customerOrderNo: 'SIES20260003',
-      quoteId: 'TKF-2026-003',
-      customerName: 'TİNAZ ELEKTRONİK TİC. LTD. ŞTİ.',
-      date: '2026-09-28',
-      externalCloudLink: YANDEX_DISK_URL,
-      items: [
-        { productCode: 'SU 20', quantity: 24, shippedQuantity: 0, status: 'Üretimde' },
-        { productCode: 'S2', quantity: 30, shippedQuantity: 0, status: 'Bekliyor' }
-      ],
-      status: 'ÜRETİMDE',
-      notes: 'Özel galvaniz kaplamalı',
-      dispatches: []
-    },
-    {
-      id: 'SIES20260004',
-      customerOrderNo: 'SIES20260004',
-      quoteId: 'TKF-2026-004',
-      customerName: 'ÖZDEMİR ELEKTRİK A.Ş.',
-      date: '2026-09-29',
-      externalCloudLink: YANDEX_DISK_URL,
-      items: [
-        { productCode: 'SU 10/P', quantity: 80, shippedQuantity: 0, status: 'Bekliyor' }
-      ],
-      status: 'YENİ SİPARİŞ',
-      notes: 'Şantiye teslim',
-      dispatches: []
-    },
-    {
-      id: 'SIES20260005',
-      customerOrderNo: 'SIES20260005',
-      quoteId: 'TKF-2026-005',
-      customerName: 'NEVA ELEKTRİK TİC. LTD.',
-      date: '2026-09-30',
-      externalCloudLink: YANDEX_DISK_URL,
-      items: [
-        { productCode: 'SG 30-2', quantity: 120, shippedQuantity: 0, status: 'Üretimde' }
-      ],
-      status: 'ÜRETİMDE',
-      notes: 'Gemi tipi kablo kanalı imalatı',
+      notes: 'SİRENA MARİN siparişi - Alüminyum kaplama',
       dispatches: []
     },
     {
       id: 'SIES20260006',
       customerOrderNo: 'SIES20260006',
       quoteId: 'TKF-2026-006',
-      customerName: 'U4 MÜHENDİSLİK SAN. TİC.',
-      date: '2026-10-01',
+      customerName: 'SİRENA MARİN',
+      date: '2026-10-07',
+      deliveryDate: '2026-10-09',
+      coatingTypes: ['ALÜMİNYUM'],
       externalCloudLink: YANDEX_DISK_URL,
       items: [
-        { productCode: 'MBF', quantity: 100, shippedQuantity: 0, status: 'Bekliyor' }
+        { productCode: 'Y03001157', description: 'ALÜMİNYUM KABLO KANALI, 250X25X2', quantity: 10, shippedQuantity: 0, status: 'Bekliyor' }
       ],
       status: 'YENİ SİPARİŞ',
-      notes: 'Proje kapsamında sevk edilecek',
+      notes: 'SİRENA MARİN siparişi',
       dispatches: []
     },
     {
-      id: 'SIES20260007',
-      customerOrderNo: 'SIES20260007',
-      quoteId: 'TKF-2026-007',
-      customerName: 'KORAY İNŞAAT TESİSAT A.Ş.',
+      id: 'SIES20260005',
+      customerOrderNo: 'SIES20260005',
+      quoteId: 'TKF-2026-005',
+      customerName: 'MORE ELEKTRONİK',
+      date: '2026-10-06',
+      externalCloudLink: YANDEX_DISK_URL,
+      items: [
+        { productCode: 'SU 20', description: 'UNIVERSAL KABLO KANALI 200X40X0.90 MM', quantity: 18, shippedQuantity: 0, status: 'Üretimde' }
+      ],
+      status: 'ÜRETİMDE',
+      notes: 'Elektronik klemens imalatı',
+      dispatches: []
+    },
+    {
+      id: 'SIES20260004',
+      customerOrderNo: 'SIES20260004',
+      quoteId: 'TKF-2026-004',
+      customerName: 'TERSAN TERSANECİLİK A.Ş.',
+      date: '2026-10-05',
+      externalCloudLink: YANDEX_DISK_URL,
+      items: [
+        { productCode: 'SU 10/P', description: '304 K. PASLANMAZ KABLO KANALI 100X40X0.80 MM', quantity: 10, shippedQuantity: 0, status: 'Üretimde' },
+        { productCode: 'BB 8X15', description: 'CİVATA VİDA ELEMANI', quantity: 100, shippedQuantity: 0, status: 'Bekliyor' }
+      ],
+      status: 'ÜRETİMDE',
+      notes: 'Tersan gemi imalat siparişi',
+      dispatches: []
+    },
+    {
+      id: 'SIES20260003',
+      customerOrderNo: 'SIES20260003',
+      quoteId: 'TKF-2026-003',
+      customerName: 'TERSAN TERSANECİLİK A.Ş.',
+      date: '2026-10-04',
+      externalCloudLink: YANDEX_DISK_URL,
+      items: [
+        { productCode: 'SKK KAPAK', description: 'KABLO KANALI KAPAGI', quantity: 50, shippedQuantity: 0, status: 'Üretimde' }
+      ],
+      status: 'ÜRETİMDE',
+      notes: 'Gemi güverte siparişi',
+      dispatches: []
+    },
+    {
+      id: 'SIES20260002',
+      customerOrderNo: 'SIES20260002',
+      quoteId: 'TKF-2026-002',
+      customerName: 'TERSAN TERSANECİLİK A.Ş.',
+      date: '2026-10-03',
+      externalCloudLink: YANDEX_DISK_URL,
+      items: [
+        { productCode: 'MBF', description: 'BİRLEŞTİRME ELEMANI', quantity: 200, shippedQuantity: 0, status: 'Bekliyor' }
+      ],
+      status: 'YENİ SİPARİŞ',
+      notes: 'Tersan standart sipariş',
+      dispatches: []
+    },
+    {
+      id: 'SIES20260001',
+      customerOrderNo: 'SIES20260001',
+      quoteId: 'TKF-2026-001',
+      customerName: 'TERSAN TERSANECİLİK A.Ş.',
       date: '2026-10-02',
       externalCloudLink: YANDEX_DISK_URL,
       items: [
-        { productCode: 'SKK KAPAK', quantity: 80, shippedQuantity: 0, status: 'Bekliyor' },
-        { productCode: 'SU 10/P', quantity: 40, shippedQuantity: 0, status: 'Bekliyor' }
+        { productCode: 'S2', description: 'BİRLEŞTİRME PARÇASI', quantity: 30, shippedQuantity: 0, status: 'Bekliyor' }
       ],
       status: 'YENİ SİPARİŞ',
-      notes: 'Sıcak daldırma galvaniz kaplama',
+      notes: 'Tersan birleştirme parçaları',
       dispatches: []
     },
     {
       id: 'SIES20260008',
       customerOrderNo: 'SIES20260008',
       quoteId: 'TKF-2026-008',
-      customerName: 'ANUŞ ELEKTRİK KEREM ANUŞ',
-      date: '2026-09-25',
+      customerName: 'BEŞİKTAŞ TERSANESİ',
+      date: '2026-10-07',
+      coatingTypes: ['ELEKTRO GALVANİZ (EG)'],
       externalCloudLink: YANDEX_DISK_URL,
       items: [
-        { productCode: 'SU 10/P', quantity: 5, shippedQuantity: 5, status: 'Sevk Edildi' },
-        { productCode: 'BB 8X15', quantity: 100, shippedQuantity: 100, status: 'Sevk Edildi' },
-        { productCode: 'MBF', quantity: 100, shippedQuantity: 100, status: 'Sevk Edildi' }
+        { productCode: '103810 - KABLO YOLU TAKOZU | M8*50 MM', description: 'KABLO YOLU TAKOZU | M8*50 MM', quantity: 60, shippedQuantity: 0, status: 'Bekliyor' }
       ],
-      status: 'SEVK EDİLDİ',
-      productionRunId: 'PRD-2024-001',
-      dispatchNoteNo: 'SE12024000000058',
-      dispatches: [
-        {
-          dispatchNoteNo: 'SE12024000000058',
-          date: '2026-09-29',
-          items: [
-            { productCode: 'SU 10/P', quantity: 5 },
-            { productCode: 'BB 8X15', quantity: 100 },
-            { productCode: 'MBF', quantity: 100 }
-          ]
-        }
-      ]
+      status: 'YENİ SİPARİŞ',
+      notes: 'PROJE: MALZEME',
+      createdBy: 'İbrahim Sert (Genel Müdür)',
+      createdDate: '07.10.2026 15:14:33',
+      dispatches: []
     }
   ];
 }
