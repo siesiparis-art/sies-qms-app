@@ -58,6 +58,51 @@ export async function fetchDirectFromYandexDisk(): Promise<Record<string, any> |
   return null;
 }
 
+function getItemWeight(item: any): number {
+  if (!item || typeof item !== 'object') return 0;
+  let weight = typeof item.updatedAt === 'number' && item.updatedAt > 0 ? item.updatedAt : 0;
+  const STATUS_RANKS: Record<string, number> = {
+    'SEVK EDİLDİ': 7000000,
+    'KISMİ SEVK EDİLDİ': 6000000,
+    'PAKETLEMEDE': 5000000,
+    'BOYADA': 4000000,
+    'KAPLAMADA': 3000000,
+    'ÜRETİMDE': 2000000,
+    'YENİ SİPARİŞ': 1000000
+  };
+  const statusWeight = STATUS_RANKS[String(item.status || '').toUpperCase()] || 0;
+  const dispatchWeight = Array.isArray(item.dispatches) ? item.dispatches.length * 100000 : 0;
+  const historyWeight = Array.isArray(item.history) ? item.history.length * 1000 : 0;
+  return weight + statusWeight + dispatchWeight + historyWeight;
+}
+
+function mergeArrayItems(remoteArr: any[], incomingArr: any[], deletedSet: Set<string>): any[] {
+  const map = new Map<string, any>();
+
+  const processItem = (item: any) => {
+    if (!item || typeof item !== 'object') return;
+    const itemId = String(item.id || item.code || '').trim().toLowerCase();
+    if (!itemId) return;
+    if (deletedSet.has(itemId)) return;
+
+    if (!map.has(itemId)) {
+      map.set(itemId, item);
+    } else {
+      const existing = map.get(itemId);
+      const existingW = getItemWeight(existing);
+      const incomingW = getItemWeight(item);
+      if (incomingW >= existingW) {
+        map.set(itemId, item);
+      }
+    }
+  };
+
+  (remoteArr || []).forEach(processItem);
+  (incomingArr || []).forEach(processItem);
+
+  return Array.from(map.values());
+}
+
 export async function saveDirectToYandexDisk(cleanData: Record<string, any>): Promise<boolean> {
   try {
     // 1. Fetch current remote store to safely merge
@@ -69,13 +114,32 @@ export async function saveDirectToYandexDisk(cleanData: Record<string, any>): Pr
       }
     } catch (e) {}
 
+    // Extract deleted items sets
+    const deletedOrders: string[] = [
+      ...(Array.isArray(remoteStore.qms_deleted_orders) ? remoteStore.qms_deleted_orders : []),
+      ...(Array.isArray(cleanData.qms_deleted_orders) ? cleanData.qms_deleted_orders : [])
+    ];
+    const deletedSet = new Set<string>(
+      deletedOrders
+        .filter(s => s && typeof s === 'string' && !s.toLowerCase().trim().startsWith('sies2026'))
+        .map(s => s.trim().toLowerCase())
+    );
+
     // 2. Merge incoming data into remote store
     const mergedStore: Record<string, any> = { ...remoteStore };
     Object.keys(cleanData).forEach(key => {
       const incomingVal = cleanData[key];
+      const remoteVal = remoteStore[key];
+
       if (Array.isArray(incomingVal)) {
-        if (incomingVal.length > 0 || !mergedStore[key]) {
-          mergedStore[key] = incomingVal;
+        if (Array.isArray(remoteVal) && remoteVal.length > 0) {
+          mergedStore[key] = mergeArrayItems(remoteVal, incomingVal, deletedSet);
+        } else {
+          mergedStore[key] = incomingVal.filter(item => {
+            if (!item || typeof item !== 'object') return true;
+            const itemId = String(item.id || item.code || '').trim().toLowerCase();
+            return !itemId || !deletedSet.has(itemId);
+          });
         }
       } else if (incomingVal !== undefined && incomingVal !== null) {
         mergedStore[key] = incomingVal;
@@ -110,3 +174,4 @@ export async function saveDirectToYandexDisk(cleanData: Record<string, any>): Pr
   }
   return false;
 }
+

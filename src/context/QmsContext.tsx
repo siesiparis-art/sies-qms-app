@@ -993,8 +993,8 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const pollCloudSync = async () => {
       if (isPollingInProgress) return;
-      // Race condition guard: Skip poller state overwrite if user performed a local mutation in the last 5 seconds
-      if (Date.now() - lastLocalMutationTimeRef.current < 5000) {
+      // Skip poller overwrite only during active local user drag/typing (1.5 second buffer)
+      if (Date.now() - lastLocalMutationTimeRef.current < 1500) {
         return;
       }
       isPollingInProgress = true;
@@ -1022,15 +1022,19 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               let cleanCloudPool: any[] = [];
 
               if (cloudData && cloudData.length > 0) {
-                // AUTHORITATIVE CLOUD MODE: Yandex Disk is single source of truth for all PCs
-                cleanCloudPool = cloudData;
+                // SMART MERGE: Union local items and cloud data by ID so no client loses local orders
+                cleanCloudPool = mergeById(localItems, cloudData, delOrdersSet);
               } else if (localItems && localItems.length > 0) {
-                // LOCAL SEED MODE: Upload local state to cloud if cloud is empty
                 cleanCloudPool = localItems;
                 updatedStore[key] = localItems;
                 storeUpdated = true;
               } else if (key === 'qms_orders') {
                 cleanCloudPool = generateDefaultOrders(products);
+                updatedStore[key] = cleanCloudPool;
+                storeUpdated = true;
+              }
+
+              if (cloudData && cleanCloudPool.length > cloudData.length) {
                 updatedStore[key] = cleanCloudPool;
                 storeUpdated = true;
               }
@@ -1043,7 +1047,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   localStorage.setItem(key, jsonStr);
                 } catch (e) {}
 
-                // Instantly update React state on every PC from authoritative cloud store
+                // Instantly update React state on every PC from authoritative merged store
                 if (key === 'qms_orders') setOrders(cleanCloudPool);
                 if (key === 'qms_quotes') setQuotes(cleanCloudPool);
                 if (key === 'qms_production_runs') setProductionRuns(cleanCloudPool);
