@@ -972,10 +972,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
 
-      fetchDirectFromYandexDisk().then(currentStore => {
-        const updatedStore = { ...(currentStore || {}), [key]: sanitized };
-        saveDirectToYandexDisk(updatedStore);
-      }).catch(() => null);
+      saveDirectToYandexDisk({ [key]: sanitized });
     }
   };
 

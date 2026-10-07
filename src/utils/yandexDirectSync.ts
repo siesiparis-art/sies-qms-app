@@ -10,31 +10,27 @@ function sanitizeStore(store: Record<string, any>): Record<string, any> {
   return clean;
 }
 
-export async function fetchDirectFromYandexDisk(): Promise<Record<string, any> | null> {
+export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
+  const fileName = key.endsWith('.json') ? key : `${key}.json`;
   try {
-    // 1. Primary: Yandex Public Link REST API (100% CORS, 0% Token error, works in all web browsers)
-    const pubUrl = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=' + encodeURIComponent(YANDEX_PUBLIC_KEY) + '&path=' + encodeURIComponent('/sies_store.json');
+    // 1. Primary: Yandex Public Link REST API (100% CORS, works in all web browsers)
+    const pubUrl = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=' + encodeURIComponent(YANDEX_PUBLIC_KEY) + '&path=' + encodeURIComponent('/' + fileName);
     const pubRes = await fetch(pubUrl, { cache: 'no-store' }).catch(() => null);
     if (pubRes && pubRes.ok) {
       const pubData = await pubRes.json().catch(() => null);
       if (pubData && pubData.href) {
         const fileRes = await fetch(pubData.href, { cache: 'no-store' }).catch(() => null);
         if (fileRes && fileRes.ok) {
-          const store = await fileRes.json().catch(() => null);
-          if (store && typeof store === 'object') {
-            return sanitizeStore(store);
-          }
+          return await fileRes.json().catch(() => null);
         }
       }
     }
-  } catch (err) {
-    console.error('Yandex Public Fetch Error:', err);
-  }
+  } catch (e) {}
 
   try {
-    // 2. Secondary: Direct OAuth API Fallback
+    // 2. Secondary: OAuth API Fallback
     const downloadRes = await fetch(
-      'https://cloud-api.yandex.net/v1/disk/resources/download?path=' + encodeURIComponent(YANDEX_FILE_PATH),
+      'https://cloud-api.yandex.net/v1/disk/resources/download?path=' + encodeURIComponent(`disk:/SIES_QMS_Data/${fileName}`),
       {
         headers: { Authorization: `OAuth ${YANDEX_TOKEN}` },
         cache: 'no-store'
@@ -46,16 +42,132 @@ export async function fetchDirectFromYandexDisk(): Promise<Record<string, any> |
       if (data && data.href) {
         const contentRes = await fetch(data.href, { cache: 'no-store' }).catch(() => null);
         if (contentRes && contentRes.ok) {
-          const store = await contentRes.json().catch(() => null);
-          if (store && typeof store === 'object') {
-            return sanitizeStore(store);
+          return await contentRes.json().catch(() => null);
+        }
+      }
+    }
+  } catch (e) {}
+
+  return null;
+}
+
+export async function saveKeyToYandexDisk(key: string, data: any): Promise<boolean> {
+  const fileName = key.endsWith('.json') ? key : `${key}.json`;
+  const cleanKey = key.replace('.json', '');
+  const filePath = `disk:/SIES_QMS_Data/${fileName}`;
+
+  try {
+    let finalPayload = data;
+
+    if (Array.isArray(data)) {
+      let existingRemote: any[] = [];
+      try {
+        const fetched = await fetchKeyFromYandexDisk(cleanKey);
+        if (Array.isArray(fetched)) existingRemote = fetched;
+      } catch (e) {}
+
+      let deletedOrders: string[] = [];
+      try {
+        const delFetched = await fetchKeyFromYandexDisk('qms_deleted_orders');
+        if (Array.isArray(delFetched)) deletedOrders = delFetched;
+      } catch (e) {}
+
+      const deletedSet = new Set<string>(
+        deletedOrders
+          .filter(s => s && typeof s === 'string' && !s.toLowerCase().trim().startsWith('sies2026'))
+          .map(s => s.trim().toLowerCase())
+      );
+
+      finalPayload = mergeArrayItems(existingRemote, data, deletedSet);
+    }
+
+    const uploadRes = await fetch(
+      'https://cloud-api.yandex.net/v1/disk/resources/upload?path=' + encodeURIComponent(filePath) + '&overwrite=true',
+      {
+        headers: { Authorization: `OAuth ${YANDEX_TOKEN}` },
+        cache: 'no-store'
+      }
+    ).catch(() => null);
+
+    if (uploadRes && uploadRes.ok) {
+      const uploadData = await uploadRes.json().catch(() => null);
+      if (uploadData && uploadData.href) {
+        const putRes = await fetch(uploadData.href, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(finalPayload),
+          cache: 'no-store'
+        }).catch(() => null);
+
+        if (putRes && putRes.ok) {
+          // Sync with monolithic store as well
+          syncMonolithicStore(cleanKey, finalPayload).catch(() => null);
+          return true;
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`Error saving key ${key} to Yandex Disk:`, err);
+  }
+  return false;
+}
+
+async function syncMonolithicStore(key: string, val: any) {
+  try {
+    let store: Record<string, any> = (await fetchDirectFromYandexDisk()) || {};
+    store[key] = val;
+
+    const uploadRes = await fetch(
+      'https://cloud-api.yandex.net/v1/disk/resources/upload?path=' + encodeURIComponent(YANDEX_FILE_PATH) + '&overwrite=true',
+      {
+        headers: { Authorization: `OAuth ${YANDEX_TOKEN}` },
+        cache: 'no-store'
+      }
+    ).catch(() => null);
+
+    if (uploadRes && uploadRes.ok) {
+      const data = await uploadRes.json().catch(() => null);
+      if (data && data.href) {
+        await fetch(data.href, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(store),
+          cache: 'no-store'
+        }).catch(() => null);
+      }
+    }
+  } catch (e) {}
+}
+
+export async function fetchDirectFromYandexDisk(): Promise<Record<string, any> | null> {
+  let store: Record<string, any> = {};
+
+  try {
+    const pubUrl = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=' + encodeURIComponent(YANDEX_PUBLIC_KEY) + '&path=' + encodeURIComponent('/sies_store.json');
+    const pubRes = await fetch(pubUrl, { cache: 'no-store' }).catch(() => null);
+    if (pubRes && pubRes.ok) {
+      const pubData = await pubRes.json().catch(() => null);
+      if (pubData && pubData.href) {
+        const fileRes = await fetch(pubData.href, { cache: 'no-store' }).catch(() => null);
+        if (fileRes && fileRes.ok) {
+          const resJson = await fileRes.json().catch(() => null);
+          if (resJson && typeof resJson === 'object') {
+            store = sanitizeStore(resJson);
           }
         }
       }
     }
   } catch (err) {}
 
-  return null;
+  // Fallback / Enhancement: Ensure qms_orders is fetched from dedicated file if missing from store
+  if (!store.qms_orders || !Array.isArray(store.qms_orders) || store.qms_orders.length === 0) {
+    const dedicatedOrders = await fetchKeyFromYandexDisk('qms_orders');
+    if (Array.isArray(dedicatedOrders) && dedicatedOrders.length > 0) {
+      store.qms_orders = dedicatedOrders;
+    }
+  }
+
+  return Object.keys(store).length > 0 ? store : null;
 }
 
 function getItemWeight(item: any): number {
@@ -104,74 +216,11 @@ function mergeArrayItems(remoteArr: any[], incomingArr: any[], deletedSet: Set<s
 }
 
 export async function saveDirectToYandexDisk(cleanData: Record<string, any>): Promise<boolean> {
-  try {
-    // 1. Fetch current remote store to safely merge
-    let remoteStore: Record<string, any> = {};
-    try {
-      const existing = await fetchDirectFromYandexDisk();
-      if (existing && typeof existing === 'object') {
-        remoteStore = existing;
-      }
-    } catch (e) {}
-
-    // Extract deleted items sets
-    const deletedOrders: string[] = [
-      ...(Array.isArray(remoteStore.qms_deleted_orders) ? remoteStore.qms_deleted_orders : []),
-      ...(Array.isArray(cleanData.qms_deleted_orders) ? cleanData.qms_deleted_orders : [])
-    ];
-    const deletedSet = new Set<string>(
-      deletedOrders
-        .filter(s => s && typeof s === 'string' && !s.toLowerCase().trim().startsWith('sies2026'))
-        .map(s => s.trim().toLowerCase())
-    );
-
-    // 2. Merge incoming data into remote store
-    const mergedStore: Record<string, any> = { ...remoteStore };
-    Object.keys(cleanData).forEach(key => {
-      const incomingVal = cleanData[key];
-      const remoteVal = remoteStore[key];
-
-      if (Array.isArray(incomingVal)) {
-        if (Array.isArray(remoteVal) && remoteVal.length > 0) {
-          mergedStore[key] = mergeArrayItems(remoteVal, incomingVal, deletedSet);
-        } else {
-          mergedStore[key] = incomingVal.filter(item => {
-            if (!item || typeof item !== 'object') return true;
-            const itemId = String(item.id || item.code || '').trim().toLowerCase();
-            return !itemId || !deletedSet.has(itemId);
-          });
-        }
-      } else if (incomingVal !== undefined && incomingVal !== null) {
-        mergedStore[key] = incomingVal;
-      }
-    });
-
-    const uploadRes = await fetch(
-      'https://cloud-api.yandex.net/v1/disk/resources/upload?path=' + encodeURIComponent(YANDEX_FILE_PATH) + '&overwrite=true',
-      {
-        headers: { Authorization: `OAuth ${YANDEX_TOKEN}` },
-        cache: 'no-store'
-      }
-    ).catch(() => null);
-
-    if (uploadRes && uploadRes.ok) {
-      const data = await uploadRes.json().catch(() => null);
-      if (data && data.href) {
-        const putRes = await fetch(data.href, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(mergedStore),
-          cache: 'no-store'
-        }).catch(() => null);
-
-        if (putRes && putRes.ok) {
-          return true;
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Direct Yandex Save Error:', err);
+  let success = true;
+  const keys = Object.keys(cleanData);
+  for (const key of keys) {
+    const res = await saveKeyToYandexDisk(key, cleanData[key]);
+    if (!res) success = false;
   }
-  return false;
+  return success;
 }
-
