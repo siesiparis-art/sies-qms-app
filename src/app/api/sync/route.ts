@@ -237,14 +237,8 @@ function isInvalidOrder(item: any, deletedSet?: Set<string>): boolean {
   }
 
   if (itemId.includes('test-ord') || orderNo.includes('test-ord')) return true;
+  if (itemId.includes('test-ord') || orderNo.includes('test-ord')) return true;
   if (itemId.includes('spr-2024-002') || orderNo.includes('spr-2024-002')) return true;
-
-  const demoIds = [
-    'sies20260001', 'sies20260002', 'sies20260003', 'sies20260004', 
-    'sies20260005', 'sies20260006', 'sies20260007', 'sies20260008',
-    'sies20260097', 'ord-uras-001', 'ord-akyacht-001', 'ord-gemak-001'
-  ];
-  if (demoIds.includes(itemId) || demoIds.includes(orderNo)) return true;
 
   return false;
 }
