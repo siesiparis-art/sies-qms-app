@@ -1053,8 +1053,8 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 if (key === 'qms_complaints') setComplaints(cleanCloudPool);
               }
 
-              // If local had orders/data that cloud missed, update cloud store
-              if (cleanCloudPool.length > cloudData.length) {
+              // If local merged pool differs from cloud, update cloud store
+              if (JSON.stringify(cleanCloudPool) !== JSON.stringify(cloudData) && cleanCloudPool.length > 0) {
                 updatedStore[key] = cleanCloudPool;
                 storeUpdated = true;
               }
