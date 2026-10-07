@@ -971,25 +971,10 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
 
-      fetch(`/api/sync?t=${Date.now()}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
-        body: JSON.stringify({ key, data: sanitized })
-      }).then(res => {
-        if (!res || !res.ok) {
-          // Direct Yandex Disk save fallback
-          fetchDirectFromYandexDisk().then(currentStore => {
-            const updatedStore = { ...(currentStore || {}), [key]: sanitized };
-            saveDirectToYandexDisk(updatedStore);
-          }).catch(() => null);
-        }
-      }).catch(() => {
-        fetchDirectFromYandexDisk().then(currentStore => {
-          const updatedStore = { ...(currentStore || {}), [key]: sanitized };
-          saveDirectToYandexDisk(updatedStore);
-        }).catch(() => null);
-      });
+      fetchDirectFromYandexDisk().then(currentStore => {
+        const updatedStore = { ...(currentStore || {}), [key]: sanitized };
+        saveDirectToYandexDisk(updatedStore);
+      }).catch(() => null);
     }
   };
 
@@ -1013,15 +998,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       isPollingInProgress = true;
       try {
-        let store: any = null;
-        const res = await fetch(`/api/sync?t=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
-        if (res && res.ok) {
-          const body = await res.json().catch(() => null);
-          store = body?.store;
-        }
-        if (!store || typeof store !== 'object') {
-          store = await fetchDirectFromYandexDisk();
-        }
+        const store: any = await fetchDirectFromYandexDisk();
 
         if (store && typeof store === 'object') {
             const cloudDelOrders: string[] = Array.isArray(store.qms_deleted_orders) ? store.qms_deleted_orders : [];
