@@ -13,7 +13,7 @@ if (!globalThis.siesGlobalCloudStore) {
 // Primary Store: Yandex Disk REST API (118 GB Storage Account for faruk@sies.com.tr)
 const YANDEX_TOKEN = process.env.YANDEX_DISK_TOKEN || 'y0__wgBEL6E75aq94ACGM7XSyDardinGeBwDdGn_ZMhsB4twfv5dNQZafZa';
 const YANDEX_FOLDER_PATH = 'disk:/SIES_QMS_Data';
-const YANDEX_FILE_PATH = 'disk:/SIES_QMS_Data/sies_store.json';
+const YANDEX_FILE_PATH = 'disk:/SIES_QMS_Data/sies_store_v2.json';
 
 // Secondary Fallbacks: Upstash Redis & REST Store
 const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || 'https://hardy-unicorn-203808.upstash.io';

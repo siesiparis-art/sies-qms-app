@@ -1,7 +1,7 @@
 // Direct Client-Side Yandex Disk Cloud Sync for Desktop (.exe) and Static Web Apps
 const YANDEX_TOKEN = process.env.NEXT_PUBLIC_YANDEX_DISK_TOKEN || 'y0__wgBEL6E75aq94ACGM7XSyDardinGeBwDdGn_ZMhsB4twfv5dNQZafZa';
 const YANDEX_FOLDER_PATH = 'disk:/SIES_QMS_Data';
-const YANDEX_FILE_PATH = 'disk:/SIES_QMS_Data/sies_store.json';
+const YANDEX_FILE_PATH = 'disk:/SIES_QMS_Data/sies_store_v2.json';
 
 function sanitizeStore(store: Record<string, any>): Record<string, any> {
   const clean = { ...store };
