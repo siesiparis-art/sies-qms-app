@@ -859,11 +859,19 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       delList = rawDel ? JSON.parse(rawDel) : [];
     } catch (e) {}
 
+    // Auto-clean stale SIES2026 tombstones from local storage
+    const cleanedDelList = delList.filter(s => s && typeof s === 'string' && !s.toLowerCase().trim().startsWith('sies2026'));
+    if (cleanedDelList.length !== delList.length && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('qms_deleted_orders', JSON.stringify(cleanedDelList));
+      } catch (e) {}
+    }
+
     const tombSet = new Set<string>();
-    [...delList, ...Array.from(deletedSet)].forEach(s => {
+    [...cleanedDelList, ...Array.from(deletedSet)].forEach(s => {
       if (s && typeof s === 'string') {
         const cleanStr = s.trim().toLowerCase();
-        if (cleanStr !== '') tombSet.add(cleanStr);
+        if (cleanStr !== '' && !cleanStr.startsWith('sies2026')) tombSet.add(cleanStr);
       }
     });
 
@@ -1318,8 +1326,10 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setNonconformities(JSON.parse(localStorage.getItem('qms_nonconformities') || '[]'));
         setManagementReviews(JSON.parse(localStorage.getItem('qms_management_reviews') || '[]'));
 
-        // Load Tombstones
-        const delOrdersSet = new Set<string>(JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]'));
+        // Load Tombstones (filtering out stale SIES2026 tombstones)
+        const rawDelOrders: string[] = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
+        const cleanDelOrders = rawDelOrders.filter(id => id && typeof id === 'string' && !id.toLowerCase().trim().startsWith('sies2026'));
+        const delOrdersSet = new Set<string>(cleanDelOrders);
         const delQuotesSet = new Set<string>(JSON.parse(localStorage.getItem('qms_deleted_quotes') || '[]'));
 
         // One-time demo seed marker check
