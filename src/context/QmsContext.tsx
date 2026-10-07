@@ -1007,57 +1007,58 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const delOrdersSet = new Set(cloudDelOrders.map(s => String(s).toLowerCase()));
             const delQuotesSet = new Set(cloudDelQuotes.map(s => String(s).toLowerCase()));
 
+            let storeUpdated = false;
+            const updatedStore = { ...store };
+
             for (const key of syncKeys) {
-              const cloudData = store[key];
-              if (Array.isArray(cloudData)) {
-                let localItems: any[] = [];
+              const cloudData = Array.isArray(store[key]) ? store[key] : [];
+              let localItems: any[] = [];
+              try {
+                const raw = localStorage.getItem(key);
+                localItems = raw ? JSON.parse(raw) : [];
+              } catch (e) {}
+
+              let cleanCloudPool: any[] = [];
+              if (key === 'qms_orders') {
+                cleanCloudPool = mergeById(localItems, cloudData, delOrdersSet);
+              } else if (key === 'qms_quotes') {
+                cleanCloudPool = cloudData.length > 0 ? cloudData.filter(q => q && q.id && !delQuotesSet.has(String(q.id).toLowerCase())) : localItems;
+              } else {
+                cleanCloudPool = cloudData.length > 0 ? cloudData.filter(item => item && item.id) : localItems;
+              }
+
+              const jsonStr = JSON.stringify(cleanCloudPool);
+              const localRaw = localStorage.getItem(key);
+
+              if (localRaw !== jsonStr || localItems.length === 0) {
                 try {
-                  const raw = localStorage.getItem(key);
-                  localItems = raw ? JSON.parse(raw) : [];
+                  localStorage.setItem(key, jsonStr);
                 } catch (e) {}
 
-                let cleanCloudPool: any[] = [];
-                if (key === 'qms_orders') {
-                  cleanCloudPool = mergeById(localItems, cloudData, delOrdersSet);
-                } else if (key === 'qms_quotes') {
-                  cleanCloudPool = cloudData.filter(q => q && q.id && !delQuotesSet.has(String(q.id).toLowerCase()));
-                } else {
-                  cleanCloudPool = cloudData.filter(item => item && item.id);
-                }
-
-                const jsonStr = JSON.stringify(cleanCloudPool);
-                const localRaw = localStorage.getItem(key);
-
-                if (localRaw !== jsonStr) {
-                  try {
-                    localStorage.setItem(key, jsonStr);
-                  } catch (e) {}
-
-                  // Instantly update React state on every PC from authoritative cloud store
-                  if (key === 'qms_orders') setOrders(cleanCloudPool);
-                  if (key === 'qms_quotes') setQuotes(cleanCloudPool);
-                  if (key === 'qms_production_runs') setProductionRuns(cleanCloudPool);
-                  if (key === 'qms_certificates') setCertificates(cleanCloudPool);
-                  if (key === 'qms_measuring_devices') setMeasuringDevices(cleanCloudPool);
-                  if (key === 'qms_incoming') setIncomingInspections(cleanCloudPool);
-                  if (key === 'qms_outgoing') setOutgoingInspections(cleanCloudPool);
-                  if (key === 'qms_customers') setCustomers(cleanCloudPool);
-                  if (key === 'qms_suppliers') setSuppliers(cleanCloudPool);
-                  if (key === 'qms_products') setProducts(cleanCloudPool);
-                  if (key === 'qms_capas') setCapas(cleanCloudPool);
-                  if (key === 'qms_complaints') setComplaints(cleanCloudPool);
-                }
-
-                // If local had un-synced orders that cloud missed, push merged store to cloud immediately
-                if (key === 'qms_orders' && cleanCloudPool.length > cloudData.length) {
-                  fetch(`/api/sync?t=${Date.now()}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    cache: 'no-store',
-                    body: JSON.stringify({ key: 'qms_orders', data: cleanCloudPool, isDirectSave: true })
-                  }).catch(() => null);
-                }
+                // Instantly update React state on every PC from authoritative cloud store
+                if (key === 'qms_orders') setOrders(cleanCloudPool);
+                if (key === 'qms_quotes') setQuotes(cleanCloudPool);
+                if (key === 'qms_production_runs') setProductionRuns(cleanCloudPool);
+                if (key === 'qms_certificates') setCertificates(cleanCloudPool);
+                if (key === 'qms_measuring_devices') setMeasuringDevices(cleanCloudPool);
+                if (key === 'qms_incoming') setIncomingInspections(cleanCloudPool);
+                if (key === 'qms_outgoing') setOutgoingInspections(cleanCloudPool);
+                if (key === 'qms_customers') setCustomers(cleanCloudPool);
+                if (key === 'qms_suppliers') setSuppliers(cleanCloudPool);
+                if (key === 'qms_products') setProducts(cleanCloudPool);
+                if (key === 'qms_capas') setCapas(cleanCloudPool);
+                if (key === 'qms_complaints') setComplaints(cleanCloudPool);
               }
+
+              // If local had orders/data that cloud missed, update cloud store
+              if (cleanCloudPool.length > cloudData.length) {
+                updatedStore[key] = cleanCloudPool;
+                storeUpdated = true;
+              }
+            }
+
+            if (storeUpdated) {
+              saveDirectToYandexDisk(updatedStore);
             }
           }
       } catch (err) {
