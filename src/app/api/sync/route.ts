@@ -77,6 +77,27 @@ async function fetchFromYandexDisk(): Promise<Record<string, any> | null> {
 async function saveToYandexDisk(cleanData: Record<string, any>): Promise<boolean> {
   try {
     await ensureYandexFolder();
+    
+    let remoteStore: Record<string, any> = {};
+    try {
+      const existing = await fetchFromYandexDisk();
+      if (existing && typeof existing === 'object') {
+        remoteStore = existing;
+      }
+    } catch (e) {}
+
+    const mergedStore: Record<string, any> = { ...remoteStore };
+    Object.keys(cleanData).forEach(key => {
+      const incomingVal = cleanData[key];
+      if (Array.isArray(incomingVal)) {
+        if (incomingVal.length > 0 || !mergedStore[key]) {
+          mergedStore[key] = incomingVal;
+        }
+      } else if (incomingVal !== undefined && incomingVal !== null) {
+        mergedStore[key] = incomingVal;
+      }
+    });
+
     const uploadRes = await fetch(
       'https://cloud-api.yandex.net/v1/disk/resources/upload?path=' + encodeURIComponent(YANDEX_FILE_PATH) + '&overwrite=true',
       {
@@ -91,7 +112,7 @@ async function saveToYandexDisk(cleanData: Record<string, any>): Promise<boolean
         const putRes = await fetch(data.href, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cleanData),
+          body: JSON.stringify(mergedStore),
           cache: 'no-store'
         }).catch(() => null);
 
