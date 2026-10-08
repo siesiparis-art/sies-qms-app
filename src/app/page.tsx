@@ -76,8 +76,22 @@ export default function Home() {
   const [showInstallGuideModal, setShowInstallGuideModal] = useState<boolean>(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg error:', err));
+    if (typeof window !== 'undefined') {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          for (const reg of registrations) {
+            reg.unregister();
+          }
+        }).catch(() => null);
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg error:', err));
+      }
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          for (const name of names) {
+            caches.delete(name);
+          }
+        }).catch(() => null);
+      }
     }
 
     const handleBeforeInstallPrompt = (e: any) => {
