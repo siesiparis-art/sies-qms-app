@@ -26,7 +26,7 @@ export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
     if (downloadRes && downloadRes.ok) {
       const data = await downloadRes.json().catch(() => null);
       if (data && data.href) {
-        const contentRes = await fetch(data.href, { cache: 'no-store' }).catch(() => null);
+        const contentRes = await fetch(data.href).catch(() => null);
         if (contentRes && contentRes.ok) {
           return await contentRes.json().catch(() => null);
         }
@@ -41,7 +41,7 @@ export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
     if (pubRes && pubRes.ok) {
       const pubData = await pubRes.json().catch(() => null);
       if (pubData && pubData.href) {
-        const fileRes = await fetch(pubData.href, { cache: 'no-store' }).catch(() => null);
+        const fileRes = await fetch(pubData.href).catch(() => null);
         if (fileRes && fileRes.ok) {
           return await fileRes.json().catch(() => null);
         }
@@ -141,20 +141,10 @@ export async function fetchDirectFromYandexDisk(): Promise<Record<string, any> |
 
   // 2. Fetch monolithic sies_store.json for other keys (quotes, devices, etc.)
   try {
-    const pubUrl = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=' + encodeURIComponent(YANDEX_PUBLIC_KEY) + '&path=' + encodeURIComponent('/sies_store.json');
-    const pubRes = await fetch(pubUrl, { cache: 'no-store' }).catch(() => null);
-    if (pubRes && pubRes.ok) {
-      const pubData = await pubRes.json().catch(() => null);
-      if (pubData && pubData.href) {
-        const fileRes = await fetch(pubData.href, { cache: 'no-store' }).catch(() => null);
-        if (fileRes && fileRes.ok) {
-          const resJson = await fileRes.json().catch(() => null);
-          if (resJson && typeof resJson === 'object') {
-            const cleanStore = sanitizeStore(resJson);
-            store = { ...cleanStore, ...store };
-          }
-        }
-      }
+    const resStore = await fetchKeyFromYandexDisk('sies_store');
+    if (resStore && typeof resStore === 'object') {
+      const cleanStore = sanitizeStore(resStore);
+      store = { ...cleanStore, ...store };
     }
   } catch (err) {}
 
