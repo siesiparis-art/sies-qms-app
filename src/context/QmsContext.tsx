@@ -780,7 +780,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [certificates, setCertificates] = useState<InspectionCertificate[]>([]);
-  const [activeCategoryTab, setActiveCategoryTab] = useState<string>('AKTİF SİPARİŞLER');
+  const [activeCategoryTab, setActiveCategoryTab] = useState<string>('TÜMÜ');
   const [showCreateOrderWizard, setShowCreateOrderWizard] = useState<boolean>(false);
   const [orderSearchQuery, setOrderSearchQuery] = useState<string>('');
 

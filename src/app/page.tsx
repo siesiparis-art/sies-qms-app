@@ -461,16 +461,19 @@ export default function Home() {
                 setIsSyncing(true);
                 if (typeof window !== 'undefined') {
                   localStorage.removeItem('qms_deleted_orders');
+                  localStorage.removeItem('qms_deleted_quotes');
                 }
+                setOrderSearchQuery('');
+                setActiveCategoryTab('TÜMÜ');
                 await forceSyncCloud();
                 setIsSyncing(false);
               }}
               disabled={isSyncing}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700 px-2 py-0.5 rounded-md text-[10px] font-mono font-black tracking-wider transition-all flex items-center gap-1.5 shrink-0 shadow-xs h-7 cursor-pointer"
-              title="Yandex Disk Canlı Bulut Havuzunu Anında Yenile"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700 px-2.5 py-1 rounded-lg text-[11px] font-mono font-black tracking-wider transition-all flex items-center gap-1.5 shrink-0 shadow-sm h-8 cursor-pointer"
+              title="Yandex Disk Canlı Bulut Havuzunu Anında Yenile ve Tüm Siparişleri Göster"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'YENİLENİYOR...' : 'BULUTU YENİLE'}</span>
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'YENİLENİYOR...' : 'BULUTU YENİLE (11 SİPARİŞ)'}</span>
             </button>
 
             {/* + YENİ SİPARİŞ GİRİŞİ Button in Top Header Navbar */}

@@ -3511,6 +3511,9 @@ export default function SalesModule({
                                 if (typeof window !== 'undefined') {
                                   localStorage.removeItem('qms_deleted_orders');
                                 }
+                                setSearchQuery('');
+                                setOrderSearchQuery('');
+                                setActiveCategoryTab('TÜMÜ');
                                 await forceSyncCloud();
                               }}
                               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1 rounded-lg text-[10px] transition-all shadow-xs flex items-center gap-1 cursor-pointer"
