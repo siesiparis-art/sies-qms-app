@@ -5173,6 +5173,45 @@ function generateDefaultOrders(prods: Product[]): Order[] {
       createdBy: 'Faruk - Depo Bekliyor',
       createdDate: '2026-09-10',
       dispatches: []
+    },
+    {
+      id: 'SIES20260009',
+      customerOrderNo: '406961',
+      quoteId: 'TKF-2026-009',
+      customerName: 'TERSAN TERSANECİLİK A.Ş.',
+      date: '2026-09-26',
+      deliveryDate: '2026-10-08',
+      coatingTypes: ['ASTAR BOYALI'],
+      projectNo: 'NB1099C',
+      items: [
+        { productCode: 'S792063', description: 'KABLO MENHOL ÇELİK BOYALI İÇTEN İÇE ÖLÇÜ 200 X 120 X 100 MM', quantity: 9, shippedQuantity: 0, status: 'Bekliyor' }
+      ],
+      status: 'YENİ SİPARİŞ',
+      notes: 'TERSAN TERSANECİLİK A.Ş. 406961 MÜŞTERİ SİP NO',
+      createdBy: 'Faruk - Depo Bekliyor',
+      createdDate: '2026-09-26',
+      dispatches: []
+    },
+    {
+      id: 'SIES20260010',
+      customerOrderNo: 'TEKL',
+      quoteId: 'TKF-2026-010',
+      customerName: 'SSASA',
+      date: '2026-10-08',
+      deliveryDate: '2026-10-09',
+      coatingTypes: ['SICAK DALDIRMA GALVANİZ (HDG)'],
+      projectNo: 'NOT',
+      items: [
+        { productCode: 'STÖ 05', description: 'STÖ 05 A:50MM, H:50MM, E:4.0MM(50AD* TEL ÖRGÜ KABLO KANALI L=2500MM', quantity: 2.5, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'STÖ 10', description: 'STÖ 10 A:100MM, H:50MM, E:4.0MM(50AD* HAZIRLAYAN ONAYLAYAN FARUK ORUÇ İBRAHİM SERT © SİES ELEKTRİK MÜHENDİSLİK SAN. VE TİC. LTD. ŞTİ. - TS EN 61537 UYGUN ÜRETİM FORMU', quantity: 2.5, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'STÖ-15-C', description: 'STÖ-15-C A:150MM, H:100MM, E:4.0MM(200AD* TEL ÖRGÜ KABLO KANALI L=2500MM', quantity: 2.5, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'STÖ-20', description: 'STÖ-20 A:100MM, H:50MM, E:4.0MM(200AD* TEL ÖRGÜ KABLO KANALI L=2500MM', quantity: 2.5, shippedQuantity: 0, status: 'Bekliyor' }
+      ],
+      status: 'YENİ SİPARİŞ',
+      notes: 'SSASA deneme siparişi',
+      createdBy: 'Faruk - Depo Bekliyor',
+      createdDate: '2026-10-08',
+      dispatches: []
     }
   ];
 }
