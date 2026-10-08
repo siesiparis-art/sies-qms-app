@@ -26,7 +26,8 @@ export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
     if (downloadRes && downloadRes.ok) {
       const data = await downloadRes.json().catch(() => null);
       if (data && data.href) {
-        const contentRes = await fetch(data.href).catch(() => null);
+        const freshUrl = data.href.includes('?') ? `${data.href}&_t=${Date.now()}` : `${data.href}?_t=${Date.now()}`;
+        const contentRes = await fetch(freshUrl).catch(() => null);
         if (contentRes && contentRes.ok) {
           return await contentRes.json().catch(() => null);
         }
@@ -41,7 +42,8 @@ export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
     if (pubRes && pubRes.ok) {
       const pubData = await pubRes.json().catch(() => null);
       if (pubData && pubData.href) {
-        const fileRes = await fetch(pubData.href).catch(() => null);
+        const freshPubUrl = pubData.href.includes('?') ? `${pubData.href}&_t=${Date.now()}` : `${pubData.href}?_t=${Date.now()}`;
+        const fileRes = await fetch(freshPubUrl).catch(() => null);
         if (fileRes && fileRes.ok) {
           return await fileRes.json().catch(() => null);
         }
