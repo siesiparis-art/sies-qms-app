@@ -3493,18 +3493,31 @@ export default function SalesModule({
                     {/* Customer Cards List Container with Collapsible Accordions ("aşağı açılan tırnak") */}
                     <div className="bg-white border border-slate-200/90 rounded-2xl overflow-y-auto max-h-[calc(100vh-220px)] min-h-[420px] shadow-2xs divide-y divide-slate-100 custom-scrollbar pr-0.5">
                       {customerNames.length === 0 ? (
-                        <div className="p-6 text-center text-slate-500 text-xs font-medium space-y-2">
+                        <div className="p-6 text-center text-slate-500 text-xs font-medium space-y-3">
                           <AlertCircle className="h-6 w-6 text-orange-500 mx-auto opacity-70" />
                           <div>Aranan kriterlere uygun sipariş bulunamadı.</div>
-                          <button
-                            onClick={() => {
-                              setSearchQuery('');
-                              setOrderSearchQuery('');
-                            }}
-                            className="bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold px-3 py-1 rounded-lg text-[10px] border border-orange-200 transition-colors"
-                          >
-                            Aramayı Sıfırla
-                          </button>
+                          <div className="flex items-center justify-center gap-2 flex-wrap">
+                            <button
+                              onClick={() => {
+                                setSearchQuery('');
+                                setOrderSearchQuery('');
+                              }}
+                              className="bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold px-3 py-1 rounded-lg text-[10px] border border-orange-200 transition-colors"
+                            >
+                              Aramayı Sıfırla
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (typeof window !== 'undefined') {
+                                  localStorage.removeItem('qms_deleted_orders');
+                                }
+                                await forceSyncCloud();
+                              }}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1 rounded-lg text-[10px] transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                            >
+                              <RefreshCw className="h-3 w-3" /> Canlı Bulut Havuzunu Yükle (11 Sipariş)
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         customerNames.map(custName => {

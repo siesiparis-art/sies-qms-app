@@ -455,6 +455,24 @@ export default function Home() {
               <span className="text-sm">☁️</span> <span className="hidden sm:inline font-black">YANDEX DİSK</span>
             </a>
 
+            {/* CANLI BULUT HAVUZUNU YENİLE Button */}
+            <button
+              onClick={async () => {
+                setIsSyncing(true);
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('qms_deleted_orders');
+                }
+                await forceSyncCloud();
+                setIsSyncing(false);
+              }}
+              disabled={isSyncing}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700 px-2 py-0.5 rounded-md text-[10px] font-mono font-black tracking-wider transition-all flex items-center gap-1.5 shrink-0 shadow-xs h-7 cursor-pointer"
+              title="Yandex Disk Canlı Bulut Havuzunu Anında Yenile"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'YENİLENİYOR...' : 'BULUTU YENİLE'}</span>
+            </button>
+
             {/* + YENİ SİPARİŞ GİRİŞİ Button in Top Header Navbar */}
             <button 
               onClick={() => {
