@@ -63,48 +63,19 @@ export async function saveKeyToYandexDisk(key: string, data: any, isDirectSave =
   try {
     let finalPayload = data;
 
-    if (Array.isArray(data)) {
-      let deletedSet = new Set<string>();
-      if (cleanKey === 'qms_orders') {
-        try {
-          const cloudDel = await fetchKeyFromYandexDisk('qms_deleted_orders');
-          if (Array.isArray(cloudDel)) {
-            cloudDel.forEach(s => {
-              if (s && typeof s === 'string') deletedSet.add(s.trim().toLowerCase());
-            });
-          }
-        } catch (e) {}
+    if (Array.isArray(data) && !isDirectSave) {
+      let existingRemote: any[] = [];
+      try {
+        const fetched = await fetchKeyFromYandexDisk(cleanKey);
+        if (Array.isArray(fetched)) existingRemote = fetched;
+      } catch (e) {}
+
+      if (cleanKey === 'qms_orders' && existingRemote.length === 0 && data.length < 5) {
+        console.warn('[yandexDirectSync] Blocked saving truncated orders list to cloud!');
+        return false;
       }
 
-      if (isDirectSave) {
-        finalPayload = data.filter((item: any) => {
-          if (!item || !item.id) return false;
-          const iId = String(item.id).trim().toLowerCase();
-          const iNo = String(item.customerOrderNo || '').trim().toLowerCase();
-          if (deletedSet.has(iId) || (iNo !== '' && deletedSet.has(iNo))) return false;
-          return true;
-        });
-      } else {
-        let existingRemote: any[] = [];
-        try {
-          const fetched = await fetchKeyFromYandexDisk(cleanKey);
-          if (Array.isArray(fetched)) existingRemote = fetched;
-        } catch (e) {}
-
-        if (cleanKey === 'qms_orders' && existingRemote.length === 0 && data.length < 5) {
-          console.warn('[yandexDirectSync] Blocked saving truncated orders list to cloud!');
-          return false;
-        }
-
-        const merged = mergeArrayItems(existingRemote, data);
-        finalPayload = merged.filter((item: any) => {
-          if (!item || !item.id) return false;
-          const iId = String(item.id).trim().toLowerCase();
-          const iNo = String(item.customerOrderNo || '').trim().toLowerCase();
-          if (deletedSet.has(iId) || (iNo !== '' && deletedSet.has(iNo))) return false;
-          return true;
-        });
-      }
+      finalPayload = mergeArrayItems(existingRemote, data);
     }
 
     const uploadRes = await fetch(

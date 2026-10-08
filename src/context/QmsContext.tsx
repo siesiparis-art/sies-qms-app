@@ -2651,20 +2651,11 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (Array.isArray(cloudData)) {
               let cleanPool: any[] = [];
               if (key === 'qms_orders') {
-                const fetchedOrders = cloudData.filter(o => o && o.id);
-                let localDelOrders: string[] = [];
+                cleanPool = cloudData.filter(o => o && o.id);
+                setOrders(cleanPool);
                 try {
-                  localDelOrders = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
+                  localStorage.setItem('qms_orders', JSON.stringify(cleanPool));
                 } catch (e) {}
-                const delSet = new Set<string>([...cloudDelOrders, ...localDelOrders].map(s => String(s).toLowerCase()));
-
-                cleanPool = fetchedOrders.filter((o: any) => {
-                  if (!o || !o.id) return false;
-                  const oId = String(o.id).trim().toLowerCase();
-                  const oNo = String(o.customerOrderNo || '').trim().toLowerCase();
-                  if (delSet.has(oId) || (oNo !== '' && delSet.has(oNo))) return false;
-                  return true;
-                });
               } else {
                 cleanPool = cloudData.filter(item => item && item.id);
               }
