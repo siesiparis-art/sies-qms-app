@@ -2668,7 +2668,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (Array.isArray(cloudData)) {
               let cleanPool: any[] = [];
               if (key === 'qms_orders') {
-                cleanPool = cloudData.filter(o => !isInvalidClientOrder(o, delOrdersSet));
+                cleanPool = cloudData.filter(o => o && o.id);
               } else {
                 cleanPool = cloudData.filter(item => item && item.id);
               }
