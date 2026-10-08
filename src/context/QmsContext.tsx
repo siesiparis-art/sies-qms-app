@@ -949,7 +949,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
 
-      saveDirectToYandexDisk({ [key]: sanitized });
+      saveDirectToYandexDisk({ [key]: sanitized }, key === 'qms_orders' || key === 'qms_deleted_orders');
     }
   };
 
@@ -2676,11 +2676,19 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               let cleanPool: any[] = [];
               if (key === 'qms_orders') {
                 const fetchedOrders = cloudData.filter(o => o && o.id);
-                const defaultList = generateDefaultOrders([]);
-                const poolMap = new Map<string, any>();
-                defaultList.forEach(item => poolMap.set(String(item.id).toLowerCase(), item));
-                fetchedOrders.forEach(item => poolMap.set(String(item.id).toLowerCase(), item));
-                cleanPool = Array.from(poolMap.values());
+                let localDelOrders: string[] = [];
+                try {
+                  localDelOrders = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
+                } catch (e) {}
+                const delSet = new Set<string>([...cloudDelOrders, ...localDelOrders].map(s => String(s).toLowerCase()));
+
+                cleanPool = fetchedOrders.filter((o: any) => {
+                  if (!o || !o.id) return false;
+                  const oId = String(o.id).trim().toLowerCase();
+                  const oNo = String(o.customerOrderNo || '').trim().toLowerCase();
+                  if (delSet.has(oId) || (oNo !== '' && delSet.has(oNo))) return false;
+                  return true;
+                });
               } else {
                 cleanPool = cloudData.filter(item => item && item.id);
               }

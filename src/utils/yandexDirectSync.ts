@@ -7,6 +7,7 @@ const YANDEX_FILE_PATH = 'disk:/SIES_QMS_Data/sies_store.json';
 function sanitizeStore(store: Record<string, any>): Record<string, any> {
   const clean = { ...store };
   delete clean.documents;
+  delete clean.qms_orders; // Single source of truth is disk:/SIES_QMS_Data/qms_orders.json
   return clean;
 }
 
@@ -54,7 +55,7 @@ export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
   return null;
 }
 
-export async function saveKeyToYandexDisk(key: string, data: any): Promise<boolean> {
+export async function saveKeyToYandexDisk(key: string, data: any, isDirectSave = false): Promise<boolean> {
   const fileName = key.endsWith('.json') ? key : `${key}.json`;
   const cleanKey = key.replace('.json', '');
   const filePath = `disk:/SIES_QMS_Data/${fileName}`;
@@ -63,19 +64,47 @@ export async function saveKeyToYandexDisk(key: string, data: any): Promise<boole
     let finalPayload = data;
 
     if (Array.isArray(data)) {
-      let existingRemote: any[] = [];
-      try {
-        const fetched = await fetchKeyFromYandexDisk(cleanKey);
-        if (Array.isArray(fetched)) existingRemote = fetched;
-      } catch (e) {}
-
-      // SAFETY GUARD: Never allow a client with incomplete orders to clobber the master cloud pool if remote fetch failed or returned empty
-      if (cleanKey === 'qms_orders' && existingRemote.length === 0 && data.length < 5) {
-        console.warn('[yandexDirectSync] Blocked saving truncated orders list to cloud!');
-        return false;
+      let deletedSet = new Set<string>();
+      if (cleanKey === 'qms_orders') {
+        try {
+          const cloudDel = await fetchKeyFromYandexDisk('qms_deleted_orders');
+          if (Array.isArray(cloudDel)) {
+            cloudDel.forEach(s => {
+              if (s && typeof s === 'string') deletedSet.add(s.trim().toLowerCase());
+            });
+          }
+        } catch (e) {}
       }
 
-      finalPayload = mergeArrayItems(existingRemote, data);
+      if (isDirectSave) {
+        finalPayload = data.filter((item: any) => {
+          if (!item || !item.id) return false;
+          const iId = String(item.id).trim().toLowerCase();
+          const iNo = String(item.customerOrderNo || '').trim().toLowerCase();
+          if (deletedSet.has(iId) || (iNo !== '' && deletedSet.has(iNo))) return false;
+          return true;
+        });
+      } else {
+        let existingRemote: any[] = [];
+        try {
+          const fetched = await fetchKeyFromYandexDisk(cleanKey);
+          if (Array.isArray(fetched)) existingRemote = fetched;
+        } catch (e) {}
+
+        if (cleanKey === 'qms_orders' && existingRemote.length === 0 && data.length < 5) {
+          console.warn('[yandexDirectSync] Blocked saving truncated orders list to cloud!');
+          return false;
+        }
+
+        const merged = mergeArrayItems(existingRemote, data);
+        finalPayload = merged.filter((item: any) => {
+          if (!item || !item.id) return false;
+          const iId = String(item.id).trim().toLowerCase();
+          const iNo = String(item.customerOrderNo || '').trim().toLowerCase();
+          if (deletedSet.has(iId) || (iNo !== '' && deletedSet.has(iNo))) return false;
+          return true;
+        });
+      }
     }
 
     const uploadRes = await fetch(
@@ -97,8 +126,9 @@ export async function saveKeyToYandexDisk(key: string, data: any): Promise<boole
         }).catch(() => null);
 
         if (putRes && putRes.ok) {
-          // Sync with monolithic store as well
-          syncMonolithicStore(cleanKey, finalPayload).catch(() => null);
+          if (cleanKey !== 'qms_orders') {
+            syncMonolithicStore(cleanKey, finalPayload).catch(() => null);
+          }
           return true;
         }
       }
@@ -203,11 +233,11 @@ function mergeArrayItems(remoteArr: any[], incomingArr: any[]): any[] {
   return Array.from(map.values());
 }
 
-export async function saveDirectToYandexDisk(cleanData: Record<string, any>): Promise<boolean> {
+export async function saveDirectToYandexDisk(cleanData: Record<string, any>, isDirectSave = false): Promise<boolean> {
   let success = true;
   const keys = Object.keys(cleanData);
   for (const key of keys) {
-    const res = await saveKeyToYandexDisk(key, cleanData[key]);
+    const res = await saveKeyToYandexDisk(key, cleanData[key], isDirectSave);
     if (!res) success = false;
   }
   return success;
