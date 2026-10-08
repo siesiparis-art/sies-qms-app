@@ -852,70 +852,30 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Smart Merge Helper for multi-device sync
-  const mergeById = (arr1: any[], arr2: any[], deletedSet: Set<string> = new Set()) => {
-    // Collect active order IDs from incoming arrays so active orders are NEVER blocked by stale local tombstones
-    const activeOrderIds = new Set<string>();
-    [...(arr1 || []), ...(arr2 || [])].forEach(item => {
-      if (item && item.id) activeOrderIds.add(String(item.id).trim().toLowerCase());
-      if (item && item.customerOrderNo) activeOrderIds.add(String(item.customerOrderNo).trim().toLowerCase());
-    });
-
-    let delList: string[] = [];
-    try {
-      const rawDel = localStorage.getItem('qms_deleted_orders');
-      delList = rawDel ? JSON.parse(rawDel) : [];
-    } catch (e) {}
-
-    // Auto-clean stale tombstones from local storage
-    const cleanedDelList = delList.filter(s => {
-      if (!s || typeof s !== 'string') return false;
-      const clean = s.toLowerCase().trim();
-      if (clean === '') return false;
-      if (activeOrderIds.has(clean)) return false; // Never tombstone an active order!
-      if (clean.startsWith('sies2026') || clean.startsWith('deneme') || clean.startsWith('test-2026')) return false;
-      return true;
-    });
-
-    if (cleanedDelList.length !== delList.length && typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('qms_deleted_orders', JSON.stringify(cleanedDelList));
-      } catch (e) {}
-    }
-
-    const tombSet = new Set<string>();
-    [...cleanedDelList, ...Array.from(deletedSet)].forEach(s => {
-      if (s && typeof s === 'string') {
-        const cleanStr = s.trim().toLowerCase();
-        if (cleanStr !== '' && !activeOrderIds.has(cleanStr) && !cleanStr.startsWith('sies2026') && !cleanStr.startsWith('deneme') && !cleanStr.startsWith('test-2026')) {
-          tombSet.add(cleanStr);
-        }
-      }
-    });
-
+  const mergeById = (arr1: any[], arr2: any[]) => {
     const map = new Map<string, any>();
 
     const processItem = (item: any) => {
-      if (item && item.id) {
-        const idLower = String(item.id).trim().toLowerCase();
-        if (idLower !== '' && !tombSet.has(idLower)) {
-          const existing = map.get(item.id);
-          if (!existing) {
-            map.set(item.id, item);
-          } else {
-            const existingW = getOrderWeight(existing);
-            const incomingW = getOrderWeight(item);
-            if (incomingW >= existingW) {
-              map.set(item.id, item);
-            }
-          }
+      if (!item || typeof item !== 'object') return;
+      const itemId = String(item.id || item.customerOrderNo || '').trim().toLowerCase();
+      if (!itemId) return;
+
+      if (!map.has(itemId)) {
+        map.set(itemId, item);
+      } else {
+        const existing = map.get(itemId);
+        const existingW = getOrderWeight(existing);
+        const incomingW = getOrderWeight(item);
+        if (incomingW >= existingW) {
+          map.set(itemId, item);
         }
       }
     };
 
     (arr1 || []).forEach(processItem);
     (arr2 || []).forEach(processItem);
-    
-    return Array.from(map.values()).filter(item => !isInvalidClientOrder(item, tombSet));
+
+    return Array.from(map.values());
   };
 
   // Helper to sanitize & decouple heavy Base64 strings to IndexedDB before local & cloud persistence
@@ -1036,21 +996,11 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               let cleanCloudPool: any[] = [];
 
               if (cloudData && cloudData.length > 0) {
-                // SMART MERGE: Union local items and cloud data by ID so no client loses local orders
-                cleanCloudPool = mergeById(localItems, cloudData, delOrdersSet);
+                cleanCloudPool = mergeById(localItems, cloudData);
               } else if (localItems && localItems.length > 0) {
                 cleanCloudPool = localItems;
-                updatedStore[key] = localItems;
-                storeUpdated = true;
               } else if (key === 'qms_orders') {
                 cleanCloudPool = generateDefaultOrders(products);
-                updatedStore[key] = cleanCloudPool;
-                storeUpdated = true;
-              }
-
-              if (cloudData && cleanCloudPool.length > cloudData.length) {
-                updatedStore[key] = cleanCloudPool;
-                storeUpdated = true;
               }
 
               const jsonStr = JSON.stringify(cleanCloudPool);
@@ -1071,10 +1021,6 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               if (key === 'qms_products') setProducts(cleanCloudPool);
               if (key === 'qms_capas') setCapas(cleanCloudPool);
               if (key === 'qms_complaints') setComplaints(cleanCloudPool);
-            }
-
-            if (storeUpdated) {
-              saveDirectToYandexDisk(updatedStore);
             }
           }
       } catch (err) {

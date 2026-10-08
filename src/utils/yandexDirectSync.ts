@@ -67,19 +67,7 @@ export async function saveKeyToYandexDisk(key: string, data: any): Promise<boole
         if (Array.isArray(fetched)) existingRemote = fetched;
       } catch (e) {}
 
-      let deletedOrders: string[] = [];
-      try {
-        const delFetched = await fetchKeyFromYandexDisk('qms_deleted_orders');
-        if (Array.isArray(delFetched)) deletedOrders = delFetched;
-      } catch (e) {}
-
-      const deletedSet = new Set<string>(
-        deletedOrders
-          .filter(s => s && typeof s === 'string' && !s.toLowerCase().trim().startsWith('sies2026'))
-          .map(s => s.trim().toLowerCase())
-      );
-
-      finalPayload = mergeArrayItems(existingRemote, data, deletedSet);
+      finalPayload = mergeArrayItems(existingRemote, data);
     }
 
     const uploadRes = await fetch(
@@ -191,14 +179,13 @@ function getItemWeight(item: any): number {
   return weight + statusWeight + dispatchWeight + historyWeight;
 }
 
-function mergeArrayItems(remoteArr: any[], incomingArr: any[], deletedSet: Set<string>): any[] {
+function mergeArrayItems(remoteArr: any[], incomingArr: any[]): any[] {
   const map = new Map<string, any>();
 
   const processItem = (item: any) => {
     if (!item || typeof item !== 'object') return;
     const itemId = String(item.id || item.code || '').trim().toLowerCase();
     if (!itemId) return;
-    if (deletedSet.has(itemId)) return;
 
     if (!map.has(itemId)) {
       map.set(itemId, item);
