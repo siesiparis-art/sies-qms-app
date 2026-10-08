@@ -67,6 +67,12 @@ export async function saveKeyToYandexDisk(key: string, data: any): Promise<boole
         if (Array.isArray(fetched)) existingRemote = fetched;
       } catch (e) {}
 
+      // SAFETY GUARD: Never allow a client with incomplete orders to clobber the master cloud pool if remote fetch failed or returned empty
+      if (cleanKey === 'qms_orders' && existingRemote.length === 0 && data.length < 5) {
+        console.warn('[yandexDirectSync] Blocked saving truncated orders list to cloud!');
+        return false;
+      }
+
       finalPayload = mergeArrayItems(existingRemote, data);
     }
 

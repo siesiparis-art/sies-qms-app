@@ -1311,9 +1311,16 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           .filter((q: any) => q && q.id && !delQuotesSet.has(q.id));
         setQuotes(loadedQuotes);
 
-        let loadedOrders = JSON.parse(localStorage.getItem('qms_orders') || '[]')
-          .filter((o: any) => o && o.id && !delOrdersSet.has(o.id));
-
+        let rawOrders = JSON.parse(localStorage.getItem('qms_orders') || '[]');
+        const defaultList = generateDefaultOrders([]);
+        const initialMap = new Map<string, any>();
+        defaultList.forEach(item => initialMap.set(String(item.id).toLowerCase(), item));
+        (Array.isArray(rawOrders) ? rawOrders : []).forEach((o: any) => {
+          if (o && o.id && !delOrdersSet.has(o.id)) {
+            initialMap.set(String(o.id).toLowerCase(), o);
+          }
+        });
+        let loadedOrders = Array.from(initialMap.values());
         setOrders(loadedOrders);
 
         const loadedCertificates = JSON.parse(localStorage.getItem('qms_certificates') || '[]');
@@ -2668,7 +2675,12 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (Array.isArray(cloudData)) {
               let cleanPool: any[] = [];
               if (key === 'qms_orders') {
-                cleanPool = cloudData.filter(o => o && o.id);
+                const fetchedOrders = cloudData.filter(o => o && o.id);
+                const defaultList = generateDefaultOrders([]);
+                const poolMap = new Map<string, any>();
+                defaultList.forEach(item => poolMap.set(String(item.id).toLowerCase(), item));
+                fetchedOrders.forEach(item => poolMap.set(String(item.id).toLowerCase(), item));
+                cleanPool = Array.from(poolMap.values());
               } else {
                 cleanPool = cloudData.filter(item => item && item.id);
               }
@@ -4984,6 +4996,54 @@ export function generateNextOrderNumber(existingOrders: Order[] = []): string {
 function generateDefaultOrders(prods: Product[]): Order[] {
   return [
     {
+      id: 'DENEME-001',
+      customerOrderNo: 'DENEME-001',
+      quoteId: 'TKF-2026-000',
+      customerName: '0 FARUK ORUÇ DENEME SİPARİŞİ',
+      date: '2026-10-07',
+      deliveryDate: '2026-10-15',
+      coatingTypes: ['DALDIRMA GALVANİZ (DG)'],
+      items: [
+        { productCode: 'S57243', description: 'KABLO MERDİVEN SİMETRİK DALDIRMA GALVANİZ DELİKLİ 150 MM X 40 MM X 5 MM SG15MSD', quantity: 100, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'S70372', description: 'PROFİL KÖŞEBENT DALDIRMA GALVANİZ 4 X 40 X 40 X L:2000 (DELİKLİ)', quantity: 200, shippedQuantity: 0, status: 'Bekliyor' }
+      ],
+      status: 'YENİ SİPARİŞ',
+      notes: 'Deneme siparişi',
+      dispatches: []
+    },
+    {
+      id: 'TEST-2026-01',
+      customerOrderNo: 'TEST-2026-01',
+      quoteId: 'TKF-2026-000',
+      customerName: 'TEST ŞİRKETİ A.Ş.',
+      date: '2026-10-06',
+      deliveryDate: '2026-10-12',
+      coatingTypes: ['ELEKTRO GALVANİZ (EG)'],
+      items: [
+        { productCode: 'SU 20', description: 'UNIVERSAL KABLO KANALI 200X40X0.90 MM', quantity: 150, shippedQuantity: 0, status: 'Bekliyor' }
+      ],
+      status: 'YENİ SİPARİŞ',
+      notes: 'Test siparişi 1',
+      dispatches: []
+    },
+    {
+      id: 'TEST-2026-02',
+      customerOrderNo: 'TEST-2026-02',
+      quoteId: 'TKF-2026-000',
+      customerName: 'SIES TEST MÜŞTERİSİ',
+      date: '2026-10-05',
+      deliveryDate: '2026-10-10',
+      coatingTypes: ['PASLANMAZ (INOX)'],
+      items: [
+        { productCode: 'SU 10/P', description: '304 K. PASLANMAZ KABLO KANALI 100X40X0.80 MM', quantity: 100, shippedQuantity: 50, status: 'Bekliyor' }
+      ],
+      status: 'KISMİ SEVK EDİLDİ',
+      notes: '50 MT sevk edildi',
+      dispatches: [
+        { dispatchNoteNo: 'SEVK-2026-001', date: '2026-10-06', items: [{ productCode: 'SU 10/P', quantity: 50 }] }
+      ]
+    },
+    {
       id: 'SIES20260007',
       customerOrderNo: 'SIES20260007',
       quoteId: 'TKF-2026-007',
@@ -5090,19 +5150,28 @@ function generateDefaultOrders(prods: Product[]): Order[] {
     },
     {
       id: 'SIES20260008',
-      customerOrderNo: 'SIES20260008',
+      customerOrderNo: '405844',
       quoteId: 'TKF-2026-008',
-      customerName: 'BEŞİKTAŞ TERSANESİ',
-      date: '2026-10-07',
-      coatingTypes: ['ELEKTRO GALVANİZ (EG)'],
-      externalCloudLink: YANDEX_DISK_URL,
+      customerName: 'TERSAN TERSANECİLİK A.Ş.',
+      date: '2026-09-10',
+      deliveryDate: '2026-09-08',
+      coatingTypes: ['KARIŞIK'],
+      projectNo: 'NB1137',
       items: [
-        { productCode: '103810 - KABLO YOLU TAKOZU | M8*50 MM', description: 'KABLO YOLU TAKOZU | M8*50 MM', quantity: 60, shippedQuantity: 0, status: 'Bekliyor' }
+        { productCode: 'S57243', description: 'KABLO MERDİVEN SİMETRİK DALDIRMA GALVANİZ DELİKLİ 150 MM X 40 MM X 5 MM SG15MSD', quantity: 100, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'S70372', description: 'PROFİL KÖŞEBENT DALDIRMA GALVANİZ 4 X 40 X 40 X L:2000 (DELİKLİ)', quantity: 200, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'S99384', description: 'KABLO MERDİVENİ DALDIRMA GALVANİZ GEMİ TİPİ DELİKLİ SİMETRİK (Z KESİT) (E,200 X 40 X 5 MM) SG 20 MSD', quantity: 200, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'S825197', description: 'PROFİL LAMA DALDIRMA GALVANİZ 5 X 40 X L:3000 (DELİKLİ) SDL-1', quantity: 200, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'S837261', description: 'PROFİL KÖŞEBENT PASLANMAZ 304 L 4 X 40 X 40 (DELİKLİ)', quantity: 60, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'S792912', description: 'PROFİL DALDIRMA GALVANİZ LB: 400 LS:200 Q:10 4 MM KALINLIK KANAL 30..SAĞ (DELİKLİ LASKİ KÖŞE PROFİL)', quantity: 150, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'S792913', description: 'PROFİL DALDIRMA GALVANİZ LB: 400 LS:200 Q:10 4 MM KALINLIK KANAL 30..SOL (DELİKLİ LASKİ KÖŞE PROFİL)', quantity: 150, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'S812262', description: 'PROFİL DALDIRMA GALVANİZ LB: 600 LS:200 Q:10 4 MM KALINLIK KANAL 30..SOL (UZUN DELİKLİ LASKİ KÖŞE PROFİL)', quantity: 100, shippedQuantity: 0, status: 'Bekliyor' },
+        { productCode: 'S812263', description: 'PROFİL DALDIRMA GALVANİZ LB: 600 LS:200 Q:10 4 MM KALINLIK KANAL 30..SAĞ (UZUN DELİKLİ LASKİ KÖŞE PROFİL)', quantity: 100, shippedQuantity: 0, status: 'Bekliyor' }
       ],
       status: 'YENİ SİPARİŞ',
-      notes: 'PROJE: MALZEME',
-      createdBy: 'İbrahim Sert (Genel Müdür)',
-      createdDate: '07.10.2026 15:14:33',
+      notes: 'TERSAN TERSANECİLİK A.Ş. 405844 MÜŞTERİ SİP NO',
+      createdBy: 'Faruk - Depo Bekliyor',
+      createdDate: '2026-09-10',
       dispatches: []
     }
   ];
