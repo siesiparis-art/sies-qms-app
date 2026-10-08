@@ -1312,15 +1312,15 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setQuotes(loadedQuotes);
 
         let rawOrders = JSON.parse(localStorage.getItem('qms_orders') || '[]');
-        const defaultList = generateDefaultOrders([]);
-        const initialMap = new Map<string, any>();
-        defaultList.forEach(item => initialMap.set(String(item.id).toLowerCase(), item));
-        (Array.isArray(rawOrders) ? rawOrders : []).forEach((o: any) => {
-          if (o && o.id && !delOrdersSet.has(o.id)) {
-            initialMap.set(String(o.id).toLowerCase(), o);
-          }
-        });
-        let loadedOrders = Array.from(initialMap.values());
+        let loadedOrders = (Array.isArray(rawOrders) ? rawOrders : [])
+          .filter((o: any) => o && o.id && !delOrdersSet.has(String(o.id).toLowerCase()) && !delOrdersSet.has(String(o.customerOrderNo || '').toLowerCase()));
+
+        // ONLY if localStorage has never loaded orders before (brand new setup), use defaultList
+        if (loadedOrders.length === 0 && typeof window !== 'undefined' && !localStorage.getItem('qms_orders_initialized')) {
+          loadedOrders = generateDefaultOrders([]);
+          localStorage.setItem('qms_orders_initialized', 'true');
+        }
+
         setOrders(loadedOrders);
 
         const loadedCertificates = JSON.parse(localStorage.getItem('qms_certificates') || '[]');
@@ -2467,21 +2467,8 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     saveState('qms_orders', updated);
 
-    // Clean deleted_orders tombstones in cloud
-    fetch(`/api/sync?t=${nowTs}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-      body: JSON.stringify({ key: 'qms_deleted_orders', data: cleanedDeleted })
-    }).catch(() => null);
-
-    // Direct authoritative save to cloud endpoint so poller never overwrites new order
-    fetch(`/api/sync?t=${nowTs}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-      body: JSON.stringify({ key: 'qms_orders', data: updated, isDirectSave: true })
-    }).catch(() => null);
+    saveDirectToYandexDisk({ qms_deleted_orders: cleanedDeleted }, true);
+    saveDirectToYandexDisk({ qms_orders: updated }, true);
 
   };
   
@@ -2555,19 +2542,8 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('qms_deleted_orders', JSON.stringify(deletedOrders));
     } catch (e) {}
 
-    fetch(`/api/sync?t=${Date.now()}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-      body: JSON.stringify({ key: 'qms_deleted_orders', data: deletedOrders })
-    }).catch(() => null);
-
-    fetch(`/api/sync?t=${Date.now()}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-      body: JSON.stringify({ key: 'qms_orders', data: updated, isDirectSave: true })
-    }).catch(() => null);
+    saveDirectToYandexDisk({ qms_deleted_orders: deletedOrders }, true);
+    saveDirectToYandexDisk({ qms_orders: updated }, true);
   };
 
   const addCertificate = (c: InspectionCertificate) => {
