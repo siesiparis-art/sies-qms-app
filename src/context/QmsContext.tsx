@@ -2728,13 +2728,10 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
 
               if (key === 'qms_orders') {
-                setOrders(prev => {
-                  const merged = mergeById(prev, cleanPool, delOrdersSet);
-                  try {
-                    localStorage.setItem('qms_orders', JSON.stringify(merged));
-                  } catch (e) {}
-                  return merged;
-                });
+                setOrders(cleanPool);
+                try {
+                  localStorage.setItem('qms_orders', JSON.stringify(cleanPool));
+                } catch (e) {}
               } else {
                 localStorage.setItem(key, JSON.stringify(cleanPool));
               }

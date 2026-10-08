@@ -12,23 +12,9 @@ function sanitizeStore(store: Record<string, any>): Record<string, any> {
 
 export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
   const fileName = key.endsWith('.json') ? key : `${key}.json`;
+  
+  // 1. Primary: OAuth REST API (100% real-time, zero CDN caching, 100% CORS)
   try {
-    // 1. Primary: Yandex Public Link REST API (100% CORS, works in all web browsers)
-    const pubUrl = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=' + encodeURIComponent(YANDEX_PUBLIC_KEY) + '&path=' + encodeURIComponent('/' + fileName);
-    const pubRes = await fetch(pubUrl, { cache: 'no-store' }).catch(() => null);
-    if (pubRes && pubRes.ok) {
-      const pubData = await pubRes.json().catch(() => null);
-      if (pubData && pubData.href) {
-        const fileRes = await fetch(pubData.href, { cache: 'no-store' }).catch(() => null);
-        if (fileRes && fileRes.ok) {
-          return await fileRes.json().catch(() => null);
-        }
-      }
-    }
-  } catch (e) {}
-
-  try {
-    // 2. Secondary: OAuth API Fallback
     const downloadRes = await fetch(
       'https://cloud-api.yandex.net/v1/disk/resources/download?path=' + encodeURIComponent(`disk:/SIES_QMS_Data/${fileName}`),
       {
@@ -43,6 +29,21 @@ export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
         const contentRes = await fetch(data.href, { cache: 'no-store' }).catch(() => null);
         if (contentRes && contentRes.ok) {
           return await contentRes.json().catch(() => null);
+        }
+      }
+    }
+  } catch (e) {}
+
+  // 2. Secondary: Public Link REST API Fallback
+  try {
+    const pubUrl = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=' + encodeURIComponent(YANDEX_PUBLIC_KEY) + '&path=' + encodeURIComponent('/' + fileName);
+    const pubRes = await fetch(pubUrl, { cache: 'no-store' }).catch(() => null);
+    if (pubRes && pubRes.ok) {
+      const pubData = await pubRes.json().catch(() => null);
+      if (pubData && pubData.href) {
+        const fileRes = await fetch(pubData.href, { cache: 'no-store' }).catch(() => null);
+        if (fileRes && fileRes.ok) {
+          return await fileRes.json().catch(() => null);
         }
       }
     }
