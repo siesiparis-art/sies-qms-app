@@ -999,28 +999,28 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 cleanCloudPool = mergeById(localItems, cloudData);
               } else if (localItems && localItems.length > 0) {
                 cleanCloudPool = localItems;
-              } else if (key === 'qms_orders') {
-                cleanCloudPool = generateDefaultOrders(products);
               }
 
-              const jsonStr = JSON.stringify(cleanCloudPool);
-              try {
-                localStorage.setItem(key, jsonStr);
-              } catch (e) {}
+              if (cleanCloudPool.length > 0) {
+                const jsonStr = JSON.stringify(cleanCloudPool);
+                try {
+                  localStorage.setItem(key, jsonStr);
+                } catch (e) {}
 
-              // Instantly update React state on every PC from authoritative merged store
-              if (key === 'qms_orders') setOrders(cleanCloudPool);
-              if (key === 'qms_quotes') setQuotes(cleanCloudPool);
-              if (key === 'qms_production_runs') setProductionRuns(cleanCloudPool);
-              if (key === 'qms_certificates') setCertificates(cleanCloudPool);
-              if (key === 'qms_measuring_devices') setMeasuringDevices(cleanCloudPool);
-              if (key === 'qms_incoming') setIncomingInspections(cleanCloudPool);
-              if (key === 'qms_outgoing') setOutgoingInspections(cleanCloudPool);
-              if (key === 'qms_customers') setCustomers(cleanCloudPool);
-              if (key === 'qms_suppliers') setSuppliers(cleanCloudPool);
-              if (key === 'qms_products') setProducts(cleanCloudPool);
-              if (key === 'qms_capas') setCapas(cleanCloudPool);
-              if (key === 'qms_complaints') setComplaints(cleanCloudPool);
+                // Instantly update React state on every PC from authoritative merged store
+                if (key === 'qms_orders') setOrders(cleanCloudPool);
+                if (key === 'qms_quotes') setQuotes(cleanCloudPool);
+                if (key === 'qms_production_runs') setProductionRuns(cleanCloudPool);
+                if (key === 'qms_certificates') setCertificates(cleanCloudPool);
+                if (key === 'qms_measuring_devices') setMeasuringDevices(cleanCloudPool);
+                if (key === 'qms_incoming') setIncomingInspections(cleanCloudPool);
+                if (key === 'qms_outgoing') setOutgoingInspections(cleanCloudPool);
+                if (key === 'qms_customers') setCustomers(cleanCloudPool);
+                if (key === 'qms_suppliers') setSuppliers(cleanCloudPool);
+                if (key === 'qms_products') setProducts(cleanCloudPool);
+                if (key === 'qms_capas') setCapas(cleanCloudPool);
+                if (key === 'qms_complaints') setComplaints(cleanCloudPool);
+              }
             }
           }
       } catch (err) {
