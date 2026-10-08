@@ -987,27 +987,27 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
             for (const key of syncKeys) {
               const cloudData = Array.isArray(store[key]) ? store[key] : null;
-              let localItems: any[] = [];
+              let localRaw = '';
               try {
-                const raw = localStorage.getItem(key);
-                localItems = raw ? JSON.parse(raw) : [];
+                localRaw = localStorage.getItem(key) || '';
               } catch (e) {}
 
               let cleanCloudPool: any[] = [];
-
-              if (cloudData && cloudData.length > 0) {
-                cleanCloudPool = mergeById(localItems, cloudData);
-              } else if (localItems && localItems.length > 0) {
-                cleanCloudPool = localItems;
+              if (cloudData !== null) {
+                cleanCloudPool = cloudData.filter((item: any) => item && (item.id || item.code));
+              } else if (localRaw) {
+                try {
+                  cleanCloudPool = JSON.parse(localRaw);
+                } catch (e) {}
               }
 
-              if (cleanCloudPool.length > 0) {
-                const jsonStr = JSON.stringify(cleanCloudPool);
+              const newJsonStr = JSON.stringify(cleanCloudPool);
+              if (newJsonStr !== localRaw) {
                 try {
-                  localStorage.setItem(key, jsonStr);
+                  localStorage.setItem(key, newJsonStr);
                 } catch (e) {}
 
-                // Instantly update React state on every PC from authoritative merged store
+                // Instantly update React state on every PC from authoritative cloud store
                 if (key === 'qms_orders') setOrders(cleanCloudPool);
                 if (key === 'qms_quotes') setQuotes(cleanCloudPool);
                 if (key === 'qms_production_runs') setProductionRuns(cleanCloudPool);
