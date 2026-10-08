@@ -3432,7 +3432,9 @@ export default function SalesModule({
                           <span className="text-xs font-black uppercase tracking-wider truncate">SİPARİŞ LİSTESİ</span>
                         </div>
                         <span className="bg-orange-100 text-orange-700 font-mono font-bold text-[10px] px-2 py-0.5 rounded-full border border-orange-200 shrink-0">
-                          {filteredOrders.length} SİPARİŞ
+                          {filteredOrders.length === (orders || []).length 
+                            ? `${filteredOrders.length} SİPARİŞ` 
+                            : `${filteredOrders.length} / ${(orders || []).length} SİPARİŞ`}
                         </span>
                       </div>
 

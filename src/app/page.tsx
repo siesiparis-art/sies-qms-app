@@ -473,7 +473,7 @@ export default function Home() {
               title="Yandex Disk Canlı Bulut Havuzunu Anında Yenile ve Tüm Siparişleri Göster"
             >
               <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'YENİLENİYOR...' : 'BULUTU YENİLE (11 SİPARİŞ)'}</span>
+              <span>{isSyncing ? 'YENİLENİYOR...' : `BULUTU YENİLE (${(orders || []).length} SİPARİŞ)`}</span>
             </button>
 
             {/* + YENİ SİPARİŞ GİRİŞİ Button in Top Header Navbar */}
