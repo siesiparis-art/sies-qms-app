@@ -142,6 +142,15 @@ async function syncMonolithicStore(key: string, val: any) {
 export async function fetchDirectFromYandexDisk(): Promise<Record<string, any> | null> {
   let store: Record<string, any> = {};
 
+  // 1. Primary: Fetch dedicated qms_orders.json file FIRST for orders
+  try {
+    const dedicatedOrders = await fetchKeyFromYandexDisk('qms_orders');
+    if (Array.isArray(dedicatedOrders) && dedicatedOrders.length > 0) {
+      store.qms_orders = dedicatedOrders;
+    }
+  } catch (e) {}
+
+  // 2. Fetch monolithic sies_store.json for other keys (quotes, devices, etc.)
   try {
     const pubUrl = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=' + encodeURIComponent(YANDEX_PUBLIC_KEY) + '&path=' + encodeURIComponent('/sies_store.json');
     const pubRes = await fetch(pubUrl, { cache: 'no-store' }).catch(() => null);
@@ -152,20 +161,13 @@ export async function fetchDirectFromYandexDisk(): Promise<Record<string, any> |
         if (fileRes && fileRes.ok) {
           const resJson = await fileRes.json().catch(() => null);
           if (resJson && typeof resJson === 'object') {
-            store = sanitizeStore(resJson);
+            const cleanStore = sanitizeStore(resJson);
+            store = { ...cleanStore, ...store };
           }
         }
       }
     }
   } catch (err) {}
-
-  // Fallback / Enhancement: Ensure qms_orders is fetched from dedicated file if missing from store
-  if (!store.qms_orders || !Array.isArray(store.qms_orders) || store.qms_orders.length === 0) {
-    const dedicatedOrders = await fetchKeyFromYandexDisk('qms_orders');
-    if (Array.isArray(dedicatedOrders) && dedicatedOrders.length > 0) {
-      store.qms_orders = dedicatedOrders;
-    }
-  }
 
   return Object.keys(store).length > 0 ? store : null;
 }
