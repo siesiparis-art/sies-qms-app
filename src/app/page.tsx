@@ -83,7 +83,6 @@ export default function Home() {
             reg.unregister();
           }
         }).catch(() => null);
-        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg error:', err));
       }
       if ('caches' in window) {
         caches.keys().then(names => {
