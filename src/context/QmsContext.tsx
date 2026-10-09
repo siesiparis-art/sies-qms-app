@@ -989,26 +989,18 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
             for (const key of syncKeys) {
               const cloudData = Array.isArray(store[key]) ? store[key] : null;
-              let localRaw = '';
-              try {
-                localRaw = localStorage.getItem(key) || '';
-              } catch (e) {}
 
-              let cleanCloudPool: any[] = [];
-              if (cloudData !== null && cloudData.length > 0) {
-                cleanCloudPool = cloudData.filter((item: any) => item && (item.id || item.code));
-              } else if (localRaw) {
-                try {
-                  cleanCloudPool = JSON.parse(localRaw);
-                } catch (e) {}
-              }
+              if (cloudData !== null) {
+                let cleanCloudPool: any[] = cloudData.filter((item: any) => item && (item.id || item.code));
 
-              if (key === 'qms_orders') {
-                cleanCloudPool = cleanCloudPool.filter(o => o && o.id && !delOrdersSet.has(String(o.id).toLowerCase().trim()) && (!o.customerOrderNo || !delOrdersSet.has(String(o.customerOrderNo).toLowerCase().trim())));
-              }
+                if (key === 'qms_orders') {
+                  cleanCloudPool = cleanCloudPool.filter(o => o && o.id && !delOrdersSet.has(String(o.id).toLowerCase().trim()) && (!o.customerOrderNo || !delOrdersSet.has(String(o.customerOrderNo).toLowerCase().trim())));
+                }
 
-              if (cleanCloudPool.length > 0) {
                 const newJsonStr = JSON.stringify(cleanCloudPool);
+                let localRaw = '';
+                try { localRaw = localStorage.getItem(key) || ''; } catch (e) {}
+
                 if (newJsonStr !== localRaw) {
                   try {
                     localStorage.setItem(key, newJsonStr);
@@ -1039,7 +1031,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     pollCloudSync();
-    const interval = setInterval(pollCloudSync, 6000);
+    const interval = setInterval(pollCloudSync, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -1090,6 +1082,17 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Sync state from Yandex Disk Cloud API on mount
   useEffect(() => {
     const syncWithBackend = async () => {
+      if (typeof window !== 'undefined') {
+        const syncVer = localStorage.getItem('qms_sync_version_tag');
+        if (syncVer !== 'qms_sync_v2026_10_09_v5') {
+          console.log('Purging legacy desynced localStorage arrays for pure cloud sync...');
+          try {
+            localStorage.removeItem('qms_orders');
+            localStorage.removeItem('qms_deleted_orders');
+            localStorage.setItem('qms_sync_version_tag', 'qms_sync_v2026_10_09_v5');
+          } catch (e) {}
+        }
+      }
       try {
         const store: any = await fetchDirectFromYandexDisk();
         if (store && typeof store === 'object') {

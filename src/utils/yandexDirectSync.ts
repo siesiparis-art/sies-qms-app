@@ -11,44 +11,57 @@ function sanitizeStore(store: Record<string, any>): Record<string, any> {
   return clean;
 }
 
+// In-memory cache for pre-signed S3 download URLs to prevent rate-limiting and accelerate fetch speed
+const hrefCache: Record<string, { href: string; expiresAt: number }> = {};
+
 export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
   const fileName = key.endsWith('.json') ? key : `${key}.json`;
-  const timestamp = Date.now();
+  const now = Date.now();
   
-  // 1. Primary: OAuth REST API (100% real-time, zero CDN caching, 100% CORS)
-  try {
-    const downloadRes = await fetch(
-      `https://cloud-api.yandex.net/v1/disk/resources/download?path=${encodeURIComponent(`disk:/SIES_QMS_Data/${fileName}`)}&_t=${timestamp}`,
-      {
-        headers: { Authorization: `OAuth ${YANDEX_TOKEN}` },
-        cache: 'no-store'
-      }
-    ).catch(() => null);
+  // 1. Check in-memory href cache first (valid for 12 seconds)
+  let downloadHref = hrefCache[fileName]?.expiresAt > now ? hrefCache[fileName].href : null;
 
-    if (downloadRes && downloadRes.ok) {
-      const data = await downloadRes.json().catch(() => null);
-      if (data && data.href) {
-        const freshUrl = data.href.includes('?') ? `${data.href}&_t=${Date.now()}` : `${data.href}?_t=${Date.now()}`;
-        const contentRes = await fetch(freshUrl, { cache: 'no-store' }).catch(() => null);
+  if (!downloadHref) {
+    try {
+      const downloadRes = await fetch(
+        `https://cloud-api.yandex.net/v1/disk/resources/download?path=${encodeURIComponent(`disk:/SIES_QMS_Data/${fileName}`)}`,
+        {
+          headers: { Authorization: `OAuth ${YANDEX_TOKEN}` },
+          cache: 'no-store'
+        }
+      ).catch(() => null);
 
-        if (contentRes && contentRes.ok) {
-          return await contentRes.json().catch(() => null);
+      if (downloadRes && downloadRes.ok) {
+        const data = await downloadRes.json().catch(() => null);
+        if (data && data.href) {
+          downloadHref = data.href;
+          hrefCache[fileName] = { href: data.href, expiresAt: now + 12000 };
         }
       }
-    }
-  } catch (e) {}
+    } catch (e) {}
+  }
+
+  if (downloadHref) {
+    try {
+      const contentRes = await fetch(downloadHref, { cache: 'no-store' }).catch(() => null);
+      if (contentRes && contentRes.ok) {
+        return await contentRes.json().catch(() => null);
+      } else if (contentRes && (contentRes.status === 403 || contentRes.status === 410)) {
+        // Expired S3 signature, invalidate cache
+        delete hrefCache[fileName];
+      }
+    } catch (e) {}
+  }
 
   // 2. Secondary: Public Link REST API Fallback
   try {
-    const pubUrl = `https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=${encodeURIComponent(YANDEX_PUBLIC_KEY)}&path=${encodeURIComponent('/' + fileName)}&_t=${timestamp}`;
+    const pubUrl = `https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=${encodeURIComponent(YANDEX_PUBLIC_KEY)}&path=${encodeURIComponent('/' + fileName)}`;
     const pubRes = await fetch(pubUrl, { cache: 'no-store' }).catch(() => null);
 
     if (pubRes && pubRes.ok) {
       const pubData = await pubRes.json().catch(() => null);
       if (pubData && pubData.href) {
-        const freshPubUrl = pubData.href.includes('?') ? `${pubData.href}&_t=${Date.now()}` : `${pubData.href}?_t=${Date.now()}`;
-        const fileRes = await fetch(freshPubUrl, { cache: 'no-store' }).catch(() => null);
-
+        const fileRes = await fetch(pubData.href, { cache: 'no-store' }).catch(() => null);
         if (fileRes && fileRes.ok) {
           return await fileRes.json().catch(() => null);
         }
@@ -63,6 +76,12 @@ export async function saveKeyToYandexDisk(key: string, data: any, isDirectSave =
   const fileName = key.endsWith('.json') ? key : `${key}.json`;
   const cleanKey = key.replace('.json', '');
   const filePath = `disk:/SIES_QMS_Data/${fileName}`;
+
+  // Invalidate href cache for modified file
+  delete hrefCache[fileName];
+  if (cleanKey === 'qms_orders') {
+    delete hrefCache['qms_deleted_orders.json'];
+  }
 
   try {
     let finalPayload = data;
@@ -179,25 +198,19 @@ async function syncMonolithicStore(key: string, val: any) {
 export async function fetchDirectFromYandexDisk(): Promise<Record<string, any> | null> {
   let store: Record<string, any> = {};
 
-  // 1. Primary: Fetch dedicated qms_orders.json file FIRST for orders
   try {
-    const dedicatedOrders = await fetchKeyFromYandexDisk('qms_orders');
-    if (Array.isArray(dedicatedOrders) && dedicatedOrders.length > 0) {
+    const [dedicatedOrders, delOrders, resStore] = await Promise.all([
+      fetchKeyFromYandexDisk('qms_orders'),
+      fetchKeyFromYandexDisk('qms_deleted_orders'),
+      fetchKeyFromYandexDisk('sies_store')
+    ]);
+
+    if (Array.isArray(dedicatedOrders)) {
       store.qms_orders = dedicatedOrders;
     }
-  } catch (e) {}
-
-  // 1b. Fetch qms_deleted_orders.json so all clients get tombstones
-  try {
-    const delOrders = await fetchKeyFromYandexDisk('qms_deleted_orders');
     if (Array.isArray(delOrders)) {
       store.qms_deleted_orders = delOrders;
     }
-  } catch (e) {}
-
-  // 2. Fetch monolithic sies_store.json for other keys (quotes, devices, etc.)
-  try {
-    const resStore = await fetchKeyFromYandexDisk('sies_store');
     if (resStore && typeof resStore === 'object') {
       const cleanStore = sanitizeStore(resStore);
       store = { ...cleanStore, ...store };
