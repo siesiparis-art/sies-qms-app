@@ -192,6 +192,14 @@ export async function fetchDirectFromYandexDisk(): Promise<Record<string, any> |
     }
   } catch (e) {}
 
+  // 1b. Fetch qms_deleted_orders.json so all clients get tombstones
+  try {
+    const delOrders = await fetchKeyFromYandexDisk('qms_deleted_orders');
+    if (Array.isArray(delOrders)) {
+      store.qms_deleted_orders = delOrders;
+    }
+  } catch (e) {}
+
   // 2. Fetch monolithic sies_store.json for other keys (quotes, devices, etc.)
   try {
     const resStore = await fetchKeyFromYandexDisk('sies_store');

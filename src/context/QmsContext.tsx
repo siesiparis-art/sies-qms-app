@@ -1293,14 +1293,9 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setNonconformities(JSON.parse(localStorage.getItem('qms_nonconformities') || '[]'));
         setManagementReviews(JSON.parse(localStorage.getItem('qms_management_reviews') || '[]'));
 
-        // Load Tombstones (filtering out stale master and test tombstones)
+        // Load Tombstones
         const rawDelOrders: string[] = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
-        const cleanDelOrders = rawDelOrders.filter(id => {
-          if (!id || typeof id !== 'string') return false;
-          const clean = id.toLowerCase().trim();
-          if (clean === '' || clean.startsWith('sies2026') || clean.startsWith('deneme') || clean.startsWith('test-2026')) return false;
-          return true;
-        });
+        const cleanDelOrders = rawDelOrders.filter(id => id && typeof id === 'string' && id.trim() !== '');
         try {
           localStorage.setItem('qms_deleted_orders', JSON.stringify(cleanDelOrders));
         } catch (e) {}
