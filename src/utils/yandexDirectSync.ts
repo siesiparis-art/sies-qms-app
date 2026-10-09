@@ -67,19 +67,59 @@ export async function saveKeyToYandexDisk(key: string, data: any, isDirectSave =
   try {
     let finalPayload = data;
 
-    if (Array.isArray(data) && !isDirectSave) {
+    // Sanitize any array data to strip Base64 strings before cloud upload
+    if (Array.isArray(data)) {
+      finalPayload = data.map(item => {
+        if (item && typeof item === 'object') {
+          const copy = { ...item };
+          if (copy.attachedFileLink && typeof copy.attachedFileLink === 'string' && copy.attachedFileLink.startsWith('data:')) {
+            copy.attachedFileLink = 'db://pdf_file_att_' + copy.id;
+          }
+          if (copy.originalFileUrl && typeof copy.originalFileUrl === 'string' && copy.originalFileUrl.startsWith('data:')) {
+            copy.originalFileUrl = 'db://pdf_file_orig_' + copy.id;
+          }
+          if (copy.pdfFile && typeof copy.pdfFile === 'string' && copy.pdfFile.startsWith('data:')) {
+            copy.pdfFile = 'db://pdf_file_run_' + copy.id;
+          }
+          if (copy.pdfFileUrl && typeof copy.pdfFileUrl === 'string' && copy.pdfFileUrl.startsWith('data:')) {
+            copy.pdfFileUrl = 'db://pdf_file_dev_' + copy.id;
+          }
+          return copy;
+        }
+        return item;
+      });
+    }
+
+    if (cleanKey === 'qms_orders' && Array.isArray(finalPayload)) {
       let existingRemote: any[] = [];
+      let remoteDeleted: string[] = [];
       try {
-        const fetched = await fetchKeyFromYandexDisk(cleanKey);
-        if (Array.isArray(fetched)) existingRemote = fetched;
+        const fetchedOrders = await fetchKeyFromYandexDisk('qms_orders');
+        if (Array.isArray(fetchedOrders)) existingRemote = fetchedOrders;
+        const fetchedDel = await fetchKeyFromYandexDisk('qms_deleted_orders');
+        if (Array.isArray(fetchedDel)) remoteDeleted = fetchedDel;
       } catch (e) {}
 
-      if (cleanKey === 'qms_orders' && existingRemote.length === 0 && data.length < 5) {
-        console.warn('[yandexDirectSync] Blocked saving truncated orders list to cloud!');
-        return false;
+      let localDeleted: string[] = [];
+      try {
+        localDeleted = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
+      } catch (e) {}
+
+      const allDeletedSet = new Set([...remoteDeleted, ...localDeleted].map(s => String(s).toLowerCase().trim()));
+
+      if (isDirectSave) {
+        // Direct save: filter out tombstones from finalPayload
+        finalPayload = finalPayload.filter(o => o && o.id && !allDeletedSet.has(String(o.id).toLowerCase().trim()) && (!o.customerOrderNo || !allDeletedSet.has(String(o.customerOrderNo).toLowerCase().trim())));
+      } else {
+        // Merge with existing remote, filtering out tombstones
+        const merged = mergeArrayItems(existingRemote, finalPayload);
+        finalPayload = merged.filter(o => o && o.id && !allDeletedSet.has(String(o.id).toLowerCase().trim()) && (!o.customerOrderNo || !allDeletedSet.has(String(o.customerOrderNo).toLowerCase().trim())));
       }
 
-      finalPayload = mergeArrayItems(existingRemote, data);
+      if (finalPayload.length === 0 && allDeletedSet.size === 0) {
+        console.warn('[yandexDirectSync] Blocked saving empty orders list to cloud!');
+        return false;
+      }
     }
 
     const uploadRes = await fetch(

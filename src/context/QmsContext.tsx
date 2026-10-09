@@ -979,11 +979,18 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const cloudDelOrders: string[] = Array.isArray(store.qms_deleted_orders) ? store.qms_deleted_orders : [];
             const cloudDelQuotes: string[] = Array.isArray(store.qms_deleted_quotes) ? store.qms_deleted_quotes : [];
             
-            const delOrdersSet = new Set(cloudDelOrders.map(s => String(s).toLowerCase()));
-            const delQuotesSet = new Set(cloudDelQuotes.map(s => String(s).toLowerCase()));
+            let localDelOrders: string[] = [];
+            try {
+              localDelOrders = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
+            } catch (e) {}
 
-            let storeUpdated = false;
-            const updatedStore = { ...store };
+            const mergedDelOrders = Array.from(new Set([...cloudDelOrders, ...localDelOrders]));
+            try {
+              localStorage.setItem('qms_deleted_orders', JSON.stringify(mergedDelOrders));
+            } catch (e) {}
+
+            const delOrdersSet = new Set(mergedDelOrders.map(s => String(s).toLowerCase().trim()));
+            const delQuotesSet = new Set(cloudDelQuotes.map(s => String(s).toLowerCase().trim()));
 
             for (const key of syncKeys) {
               const cloudData = Array.isArray(store[key]) ? store[key] : null;
@@ -999,6 +1006,10 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 try {
                   cleanCloudPool = JSON.parse(localRaw);
                 } catch (e) {}
+              }
+
+              if (key === 'qms_orders') {
+                cleanCloudPool = cleanCloudPool.filter(o => o && o.id && !delOrdersSet.has(String(o.id).toLowerCase().trim()) && (!o.customerOrderNo || !delOrdersSet.has(String(o.customerOrderNo).toLowerCase().trim())));
               }
 
               if (cleanCloudPool.length > 0) {
@@ -1316,10 +1327,15 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         let rawOrders = JSON.parse(localStorage.getItem('qms_orders') || '[]');
         let loadedOrders = (Array.isArray(rawOrders) ? rawOrders : []).filter((o: any) => o && o.id);
 
-        // ONLY if localStorage has never loaded orders before (brand new setup), use defaultList
-        if (loadedOrders.length === 0 && typeof window !== 'undefined' && !localStorage.getItem('qms_orders_initialized')) {
+        loadedOrders = loadedOrders.filter((o: any) => !delOrdersSet.has(String(o.id).toLowerCase().trim()) && (!o.customerOrderNo || !delOrdersSet.has(String(o.customerOrderNo).toLowerCase().trim())));
+
+        // If loadedOrders is empty and no orders were deleted, ALWAYS seed with generateDefaultOrders([]) so app NEVER locks on empty screen!
+        if (loadedOrders.length === 0 && delOrdersSet.size === 0) {
           loadedOrders = generateDefaultOrders([]);
-          localStorage.setItem('qms_orders_initialized', 'true');
+          try {
+            localStorage.setItem('qms_orders', JSON.stringify(loadedOrders));
+            localStorage.setItem('qms_orders_initialized', 'true');
+          } catch (e) {}
         }
 
         setOrders(loadedOrders);
@@ -2440,6 +2456,13 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       ]
     };
+    // Remove from tombstones if re-adding order
+    let delList: string[] = [];
+    try {
+      delList = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
+      delList = delList.filter(d => String(d).toLowerCase() !== orderWithAudit.id.toLowerCase() && (!orderWithAudit.customerOrderNo || String(d).toLowerCase() !== orderWithAudit.customerOrderNo.toLowerCase()));
+      localStorage.setItem('qms_deleted_orders', JSON.stringify(delList));
+    } catch (e) {}
 
     const updated = [orderWithAudit, ...orders.filter(existing => existing && existing.id !== orderWithAudit.id)];
     setOrders(updated);
@@ -2449,7 +2472,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('qms_orders', JSON.stringify(updated));
     } catch (e) {}
 
-    saveDirectToYandexDisk({ qms_orders: updated }, true);
+    saveDirectToYandexDisk({ qms_orders: updated, qms_deleted_orders: delList });
   };
   
   const updateOrder = (id: string, updates: Partial<Order>) => {
@@ -2463,22 +2486,43 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('qms_orders', JSON.stringify(updated));
     } catch (e) {}
 
-    saveDirectToYandexDisk({ qms_orders: updated }, true);
+    saveDirectToYandexDisk({ qms_orders: updated });
   };
 
   const deleteOrder = (id: string) => {
     lastLocalMutationTimeRef.current = Date.now();
+    const cleanId = String(id || '').trim();
+    if (!cleanId) return;
 
-    const updated = orders.filter(o => o && o.id !== id && o.id.toLowerCase() !== id.toLowerCase() && (o.customerOrderNo || '').toLowerCase() !== id.toLowerCase());
+    const targetOrder = orders.find(o => o && (o.id === cleanId || o.id?.toLowerCase() === cleanId.toLowerCase() || (o.customerOrderNo || '').toLowerCase() === cleanId.toLowerCase()));
 
-    setOrders(updated);
-    saveState('qms_orders', updated);
-
+    let delList: string[] = [];
     try {
-      localStorage.setItem('qms_orders', JSON.stringify(updated));
+      delList = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
     } catch (e) {}
 
-    saveDirectToYandexDisk({ qms_orders: updated }, true);
+    const idsToAdd = new Set<string>(delList);
+    idsToAdd.add(cleanId);
+    if (targetOrder) {
+      if (targetOrder.id) idsToAdd.add(targetOrder.id);
+      if (targetOrder.customerOrderNo) idsToAdd.add(targetOrder.customerOrderNo);
+    }
+    const updatedDelList = Array.from(idsToAdd);
+    try {
+      localStorage.setItem('qms_deleted_orders', JSON.stringify(updatedDelList));
+    } catch (e) {}
+
+    const delSet = new Set(updatedDelList.map(s => s.toLowerCase()));
+    const updatedOrders = orders.filter(o => o && o.id && !delSet.has(o.id.toLowerCase()) && (!o.customerOrderNo || !delSet.has(o.customerOrderNo.toLowerCase())));
+
+    setOrders(updatedOrders);
+    saveState('qms_orders', updatedOrders);
+
+    try {
+      localStorage.setItem('qms_orders', JSON.stringify(updatedOrders));
+    } catch (e) {}
+
+    saveDirectToYandexDisk({ qms_orders: updatedOrders, qms_deleted_orders: updatedDelList }, true);
   };
 
   const addCertificate = (c: InspectionCertificate) => {
