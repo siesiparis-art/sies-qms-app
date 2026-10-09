@@ -100,12 +100,7 @@ export async function saveKeyToYandexDisk(key: string, data: any, isDirectSave =
         if (Array.isArray(fetchedDel)) remoteDeleted = fetchedDel;
       } catch (e) {}
 
-      let localDeleted: string[] = [];
-      try {
-        localDeleted = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
-      } catch (e) {}
-
-      const allDeletedSet = new Set([...remoteDeleted, ...localDeleted].map(s => String(s).toLowerCase().trim()));
+      const allDeletedSet = new Set(remoteDeleted.map(s => String(s).toLowerCase().trim()));
 
       if (isDirectSave) {
         // Direct save: filter out tombstones from finalPayload

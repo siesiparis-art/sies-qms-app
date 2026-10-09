@@ -979,17 +979,12 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const cloudDelOrders: string[] = Array.isArray(store.qms_deleted_orders) ? store.qms_deleted_orders : [];
             const cloudDelQuotes: string[] = Array.isArray(store.qms_deleted_quotes) ? store.qms_deleted_quotes : [];
             
-            let localDelOrders: string[] = [];
+            // Yandex Disk cloudDelOrders is authoritative
             try {
-              localDelOrders = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
+              localStorage.setItem('qms_deleted_orders', JSON.stringify(cloudDelOrders));
             } catch (e) {}
 
-            const mergedDelOrders = Array.from(new Set([...cloudDelOrders, ...localDelOrders]));
-            try {
-              localStorage.setItem('qms_deleted_orders', JSON.stringify(mergedDelOrders));
-            } catch (e) {}
-
-            const delOrdersSet = new Set(mergedDelOrders.map(s => String(s).toLowerCase().trim()));
+            const delOrdersSet = new Set(cloudDelOrders.map(s => String(s).toLowerCase().trim()));
             const delQuotesSet = new Set(cloudDelQuotes.map(s => String(s).toLowerCase().trim()));
 
             for (const key of syncKeys) {
@@ -2614,17 +2609,12 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const cloudDelOrders: string[] = Array.isArray(store.qms_deleted_orders) ? store.qms_deleted_orders : [];
         const cloudDelQuotes: string[] = Array.isArray(store.qms_deleted_quotes) ? store.qms_deleted_quotes : [];
 
-        let localDelOrders: string[] = [];
+        // Authoritative Yandex Disk cloudDelOrders overwrites local storage
         try {
-          localDelOrders = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
+          localStorage.setItem('qms_deleted_orders', JSON.stringify(cloudDelOrders));
         } catch (e) {}
 
-        const mergedDelOrders = Array.from(new Set([...cloudDelOrders, ...localDelOrders]));
-        try {
-          localStorage.setItem('qms_deleted_orders', JSON.stringify(mergedDelOrders));
-        } catch (e) {}
-
-        const delOrdersSet = new Set(mergedDelOrders.map(s => String(s).toLowerCase().trim()));
+        const delOrdersSet = new Set(cloudDelOrders.map(s => String(s).toLowerCase().trim()));
         const delQuotesSet = new Set(cloudDelQuotes.map(s => String(s).toLowerCase().trim()));
 
         const syncKeys = [
