@@ -993,7 +993,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               } catch (e) {}
 
               let cleanCloudPool: any[] = [];
-              if (cloudData !== null) {
+              if (cloudData !== null && cloudData.length > 0) {
                 cleanCloudPool = cloudData.filter((item: any) => item && (item.id || item.code));
               } else if (localRaw) {
                 try {
@@ -1001,25 +1001,27 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 } catch (e) {}
               }
 
-              const newJsonStr = JSON.stringify(cleanCloudPool);
-              if (newJsonStr !== localRaw) {
-                try {
-                  localStorage.setItem(key, newJsonStr);
-                } catch (e) {}
+              if (cleanCloudPool.length > 0) {
+                const newJsonStr = JSON.stringify(cleanCloudPool);
+                if (newJsonStr !== localRaw) {
+                  try {
+                    localStorage.setItem(key, newJsonStr);
+                  } catch (e) {}
 
-                // Instantly update React state on every PC from authoritative cloud store
-                if (key === 'qms_orders') setOrders(cleanCloudPool);
-                if (key === 'qms_quotes') setQuotes(cleanCloudPool);
-                if (key === 'qms_production_runs') setProductionRuns(cleanCloudPool);
-                if (key === 'qms_certificates') setCertificates(cleanCloudPool);
-                if (key === 'qms_measuring_devices') setMeasuringDevices(cleanCloudPool);
-                if (key === 'qms_incoming') setIncomingInspections(cleanCloudPool);
-                if (key === 'qms_outgoing') setOutgoingInspections(cleanCloudPool);
-                if (key === 'qms_customers') setCustomers(cleanCloudPool);
-                if (key === 'qms_suppliers') setSuppliers(cleanCloudPool);
-                if (key === 'qms_products') setProducts(cleanCloudPool);
-                if (key === 'qms_capas') setCapas(cleanCloudPool);
-                if (key === 'qms_complaints') setComplaints(cleanCloudPool);
+                  // Instantly update React state on every PC from authoritative cloud store
+                  if (key === 'qms_orders') setOrders(cleanCloudPool);
+                  if (key === 'qms_quotes') setQuotes(cleanCloudPool);
+                  if (key === 'qms_production_runs') setProductionRuns(cleanCloudPool);
+                  if (key === 'qms_certificates') setCertificates(cleanCloudPool);
+                  if (key === 'qms_measuring_devices') setMeasuringDevices(cleanCloudPool);
+                  if (key === 'qms_incoming') setIncomingInspections(cleanCloudPool);
+                  if (key === 'qms_outgoing') setOutgoingInspections(cleanCloudPool);
+                  if (key === 'qms_customers') setCustomers(cleanCloudPool);
+                  if (key === 'qms_suppliers') setSuppliers(cleanCloudPool);
+                  if (key === 'qms_products') setProducts(cleanCloudPool);
+                  if (key === 'qms_capas') setCapas(cleanCloudPool);
+                  if (key === 'qms_complaints') setComplaints(cleanCloudPool);
+                }
               }
             }
           }
@@ -1031,7 +1033,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     pollCloudSync();
-    const interval = setInterval(pollCloudSync, 3000);
+    const interval = setInterval(pollCloudSync, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -1124,15 +1126,6 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           qualityPolicy: "Müşteri memnuniyetini esas alarak TS EN 61537 standartlarına uygun kaliteli kablo taşıma sistemleri üretmek.",
           qualityObjectives: ["Zamanında Teslimat Oranı %98+", "Müşteri Şikayet Oranı %1 Altı"]
         };
-
-        // Version Gate: Automatically purge stale order storage on new version release
-        const APP_VERSION_KEY = 'qms_sync_ver_2026_10_09_v15';
-        if (typeof window !== 'undefined' && localStorage.getItem('qms_app_sync_ver') !== APP_VERSION_KEY) {
-          localStorage.removeItem('qms_orders');
-          localStorage.removeItem('qms_deleted_orders');
-          localStorage.removeItem('qms_deleted_quotes');
-          localStorage.setItem('qms_app_sync_ver', APP_VERSION_KEY);
-        }
 
         const savedComp = localStorage.getItem('qms_company');
         if (savedComp && savedComp !== '{}') {
