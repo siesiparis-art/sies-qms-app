@@ -458,10 +458,6 @@ export default function Home() {
             <button
               onClick={async () => {
                 setIsSyncing(true);
-                if (typeof window !== 'undefined') {
-                  localStorage.removeItem('qms_deleted_orders');
-                  localStorage.removeItem('qms_deleted_quotes');
-                }
                 setOrderSearchQuery('');
                 setActiveCategoryTab('TÜMÜ');
                 await forceSyncCloud();

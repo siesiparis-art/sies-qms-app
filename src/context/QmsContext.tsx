@@ -2611,38 +2611,49 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         store = await fetchDirectFromYandexDisk();
       }
       if (store && typeof store === 'object') {
-          const cloudDelOrders: string[] = Array.isArray(store.qms_deleted_orders) ? store.qms_deleted_orders : [];
-          const delOrdersSet = new Set(cloudDelOrders.map(s => String(s).toLowerCase()));
+        const cloudDelOrders: string[] = Array.isArray(store.qms_deleted_orders) ? store.qms_deleted_orders : [];
+        const cloudDelQuotes: string[] = Array.isArray(store.qms_deleted_quotes) ? store.qms_deleted_quotes : [];
 
-          const syncKeys = [
-            'qms_orders', 'qms_quotes', 'qms_production_runs', 'qms_certificates', 
-            'qms_measuring_devices', 'qms_incoming', 'qms_outgoing', 'qms_customers',
-            'qms_suppliers', 'qms_products', 'qms_capas', 'qms_complaints'
-          ];
+        let localDelOrders: string[] = [];
+        try {
+          localDelOrders = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
+        } catch (e) {}
 
-          for (const key of syncKeys) {
-            const cloudData = store[key];
-            if (Array.isArray(cloudData)) {
-              let cleanPool: any[] = [];
-              if (key === 'qms_orders') {
-                cleanPool = cloudData.filter(o => o && o.id);
-                setOrders(cleanPool);
-                try {
-                  localStorage.setItem('qms_orders', JSON.stringify(cleanPool));
-                } catch (e) {}
-              } else {
-                cleanPool = cloudData.filter(item => item && item.id);
-              }
+        const mergedDelOrders = Array.from(new Set([...cloudDelOrders, ...localDelOrders]));
+        try {
+          localStorage.setItem('qms_deleted_orders', JSON.stringify(mergedDelOrders));
+        } catch (e) {}
 
-              if (key === 'qms_orders') {
-                setOrders(cleanPool);
-                try {
-                  localStorage.setItem('qms_orders', JSON.stringify(cleanPool));
-                } catch (e) {}
-              } else {
+        const delOrdersSet = new Set(mergedDelOrders.map(s => String(s).toLowerCase().trim()));
+        const delQuotesSet = new Set(cloudDelQuotes.map(s => String(s).toLowerCase().trim()));
+
+        const syncKeys = [
+          'qms_orders', 'qms_quotes', 'qms_production_runs', 'qms_certificates', 
+          'qms_measuring_devices', 'qms_incoming', 'qms_outgoing', 'qms_customers',
+          'qms_suppliers', 'qms_products', 'qms_capas', 'qms_complaints'
+        ];
+
+        for (const key of syncKeys) {
+          const cloudData = store[key];
+          if (Array.isArray(cloudData)) {
+            let cleanPool: any[] = cloudData.filter((item: any) => item && (item.id || item.code));
+
+            if (key === 'qms_orders') {
+              cleanPool = cleanPool.filter(o => o && o.id && !delOrdersSet.has(String(o.id).toLowerCase().trim()) && (!o.customerOrderNo || !delOrdersSet.has(String(o.customerOrderNo).toLowerCase().trim())));
+              setOrders(cleanPool);
+              try {
+                localStorage.setItem('qms_orders', JSON.stringify(cleanPool));
+              } catch (e) {}
+            } else if (key === 'qms_quotes') {
+              cleanPool = cleanPool.filter(q => q && q.id && !delQuotesSet.has(String(q.id).toLowerCase().trim()));
+              setQuotes(cleanPool);
+              try {
+                localStorage.setItem('qms_quotes', JSON.stringify(cleanPool));
+              } catch (e) {}
+            } else {
+              try {
                 localStorage.setItem(key, JSON.stringify(cleanPool));
-              }
-              if (key === 'qms_quotes') setQuotes(cleanPool);
+              } catch (e) {}
               if (key === 'qms_production_runs') setProductionRuns(cleanPool);
               if (key === 'qms_certificates') setCertificates(cleanPool);
               if (key === 'qms_measuring_devices') setMeasuringDevices(cleanPool);
@@ -2656,6 +2667,8 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           }
         }
+        return true;
+      }
       return true;
     } catch (err) {
       return false;
