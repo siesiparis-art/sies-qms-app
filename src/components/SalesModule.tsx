@@ -3431,11 +3431,31 @@ export default function SalesModule({
                           <ListFilter className="h-4 w-4 text-orange-600 shrink-0" />
                           <span className="text-xs font-black uppercase tracking-wider truncate">SİPARİŞ LİSTESİ</span>
                         </div>
-                        <span className="bg-orange-100 text-orange-700 font-mono font-bold text-[10px] px-2 py-0.5 rounded-full border border-orange-200 shrink-0">
-                          {filteredOrders.length === (orders || []).length 
-                            ? `${filteredOrders.length} SİPARİŞ` 
-                            : `${filteredOrders.length} / ${(orders || []).length} SİPARİŞ`}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="bg-emerald-100 text-emerald-800 font-mono font-bold text-[10px] px-2 py-0.5 rounded-full border border-emerald-300 shrink-0 flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            {filteredOrders.length === (orders || []).length 
+                              ? `${filteredOrders.length} SİPARİŞ` 
+                              : `${filteredOrders.length} / ${(orders || []).length} SİPARİŞ`}
+                          </span>
+                          <button
+                            onClick={async () => {
+                              if (typeof window !== 'undefined') {
+                                localStorage.removeItem('qms_orders');
+                                localStorage.removeItem('qms_deleted_orders');
+                                localStorage.removeItem('qms_deleted_quotes');
+                              }
+                              setSearchQuery('');
+                              setOrderSearchQuery('');
+                              setActiveCategoryTab('TÜMÜ');
+                              await forceSyncCloud();
+                            }}
+                            title="Tüm önbelleği temizle ve Yandex Disk'ten canlı sipariş havuzunu yükle"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-md text-[10px] transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                          >
+                            <RefreshCw className="h-3 w-3" /> CANLI YENİLE
+                          </button>
+                        </div>
                       </div>
 
                       {/* Multi-field Search Bar */}

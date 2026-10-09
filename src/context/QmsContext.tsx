@@ -1125,6 +1125,15 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           qualityObjectives: ["Zamanında Teslimat Oranı %98+", "Müşteri Şikayet Oranı %1 Altı"]
         };
 
+        // Version Gate: Automatically purge stale order storage on new version release
+        const APP_VERSION_KEY = 'qms_sync_ver_2026_10_09_v15';
+        if (typeof window !== 'undefined' && localStorage.getItem('qms_app_sync_ver') !== APP_VERSION_KEY) {
+          localStorage.removeItem('qms_orders');
+          localStorage.removeItem('qms_deleted_orders');
+          localStorage.removeItem('qms_deleted_quotes');
+          localStorage.setItem('qms_app_sync_ver', APP_VERSION_KEY);
+        }
+
         const savedComp = localStorage.getItem('qms_company');
         if (savedComp && savedComp !== '{}') {
           setCompanyInfo(JSON.parse(savedComp));
