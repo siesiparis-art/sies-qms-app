@@ -13,13 +13,18 @@ function sanitizeStore(store: Record<string, any>): Record<string, any> {
 
 export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
   const fileName = key.endsWith('.json') ? key : `${key}.json`;
+  const timestamp = Date.now();
   
   // 1. Primary: OAuth REST API (100% real-time, zero CDN caching, 100% CORS)
   try {
     const downloadRes = await fetch(
-      'https://cloud-api.yandex.net/v1/disk/resources/download?path=' + encodeURIComponent(`disk:/SIES_QMS_Data/${fileName}`),
+      `https://cloud-api.yandex.net/v1/disk/resources/download?path=${encodeURIComponent(`disk:/SIES_QMS_Data/${fileName}`)}&_t=${timestamp}`,
       {
-        headers: { Authorization: `OAuth ${YANDEX_TOKEN}` },
+        headers: { 
+          Authorization: `OAuth ${YANDEX_TOKEN}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        },
         cache: 'no-store'
       }
     ).catch(() => null);
@@ -28,7 +33,14 @@ export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
       const data = await downloadRes.json().catch(() => null);
       if (data && data.href) {
         const freshUrl = data.href.includes('?') ? `${data.href}&_t=${Date.now()}` : `${data.href}?_t=${Date.now()}`;
-        const contentRes = await fetch(freshUrl).catch(() => null);
+        const contentRes = await fetch(freshUrl, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        }).catch(() => null);
+
         if (contentRes && contentRes.ok) {
           return await contentRes.json().catch(() => null);
         }
@@ -38,13 +50,27 @@ export async function fetchKeyFromYandexDisk(key: string): Promise<any | null> {
 
   // 2. Secondary: Public Link REST API Fallback
   try {
-    const pubUrl = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=' + encodeURIComponent(YANDEX_PUBLIC_KEY) + '&path=' + encodeURIComponent('/' + fileName);
-    const pubRes = await fetch(pubUrl, { cache: 'no-store' }).catch(() => null);
+    const pubUrl = `https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=${encodeURIComponent(YANDEX_PUBLIC_KEY)}&path=${encodeURIComponent('/' + fileName)}&_t=${timestamp}`;
+    const pubRes = await fetch(pubUrl, { 
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    }).catch(() => null);
+
     if (pubRes && pubRes.ok) {
       const pubData = await pubRes.json().catch(() => null);
       if (pubData && pubData.href) {
         const freshPubUrl = pubData.href.includes('?') ? `${pubData.href}&_t=${Date.now()}` : `${pubData.href}?_t=${Date.now()}`;
-        const fileRes = await fetch(freshPubUrl).catch(() => null);
+        const fileRes = await fetch(freshPubUrl, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        }).catch(() => null);
+
         if (fileRes && fileRes.ok) {
           return await fileRes.json().catch(() => null);
         }
