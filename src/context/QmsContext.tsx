@@ -1312,8 +1312,7 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setQuotes(loadedQuotes);
 
         let rawOrders = JSON.parse(localStorage.getItem('qms_orders') || '[]');
-        let loadedOrders = (Array.isArray(rawOrders) ? rawOrders : [])
-          .filter((o: any) => o && o.id && !delOrdersSet.has(String(o.id).toLowerCase()) && !delOrdersSet.has(String(o.customerOrderNo || '').toLowerCase()));
+        let loadedOrders = (Array.isArray(rawOrders) ? rawOrders : []).filter((o: any) => o && o.id);
 
         // ONLY if localStorage has never loaded orders before (brand new setup), use defaultList
         if (loadedOrders.length === 0 && typeof window !== 'undefined' && !localStorage.getItem('qms_orders_initialized')) {
@@ -2442,34 +2441,13 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updated = [orderWithAudit, ...orders.filter(existing => existing && existing.id !== orderWithAudit.id)];
     setOrders(updated);
-
-    // CRITICAL: Immediately un-tombstone / remove new order ID & customerOrderNo from qms_deleted_orders!
-    const targetId = (orderWithAudit.id || '').trim().toLowerCase();
-    const targetNo = (orderWithAudit.customerOrderNo || '').trim().toLowerCase();
-
-    let deletedOrders: string[] = [];
-    try {
-      deletedOrders = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
-    } catch (e) {}
-
-    const cleanedDeleted = deletedOrders.filter(s => {
-      if (!s || typeof s !== 'string') return false;
-      const clean = s.trim().toLowerCase();
-      if (clean === '') return false;
-      if (targetId !== '' && clean === targetId) return false;
-      if (targetNo !== '' && clean === targetNo) return false;
-      return true;
-    });
-
-    try {
-      localStorage.setItem('qms_deleted_orders', JSON.stringify(cleanedDeleted));
-    } catch (e) {}
-
     saveState('qms_orders', updated);
 
-    saveDirectToYandexDisk({ qms_deleted_orders: cleanedDeleted }, true);
-    saveDirectToYandexDisk({ qms_orders: updated }, true);
+    try {
+      localStorage.setItem('qms_orders', JSON.stringify(updated));
+    } catch (e) {}
 
+    saveDirectToYandexDisk({ qms_orders: updated }, true);
   };
   
   const updateOrder = (id: string, updates: Partial<Order>) => {
@@ -2479,39 +2457,17 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setOrders(updated);
     saveState('qms_orders', updated);
 
-    fetch(`/api/sync?t=${nowTs}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-      body: JSON.stringify({ key: 'qms_orders', data: updated, isDirectSave: true })
-    }).catch(() => null);
+    try {
+      localStorage.setItem('qms_orders', JSON.stringify(updated));
+    } catch (e) {}
+
+    saveDirectToYandexDisk({ qms_orders: updated }, true);
   };
 
   const deleteOrder = (id: string) => {
     lastLocalMutationTimeRef.current = Date.now();
-    const targetOrder = orders.find(o => 
-      o && (
-        o.id === id || 
-        o.id.toLowerCase() === id.toLowerCase() ||
-        (o.customerOrderNo && o.customerOrderNo.toLowerCase() === id.toLowerCase())
-      )
-    );
-    const targetId = targetOrder ? targetOrder.id : id;
-    const targetCustomerNo = targetOrder ? targetOrder.customerOrderNo : '';
 
-    const updated = orders.filter(o => {
-      if (!o) return false;
-      const oId = String(o.id || '').trim().toLowerCase();
-      const oNo = String(o.customerOrderNo || '').trim().toLowerCase();
-      const tId = String(targetId || '').trim().toLowerCase();
-      const tNo = String(targetCustomerNo || '').trim().toLowerCase();
-      const reqId = String(id || '').trim().toLowerCase();
-
-      if (tId !== '' && (oId === tId || oId === reqId)) return false;
-      if (tNo !== '' && oNo === tNo) return false;
-      if (reqId !== '' && oNo === reqId) return false;
-      return true;
-    });
+    const updated = orders.filter(o => o && o.id !== id && o.id.toLowerCase() !== id.toLowerCase() && (o.customerOrderNo || '').toLowerCase() !== id.toLowerCase());
 
     setOrders(updated);
     saveState('qms_orders', updated);
@@ -2520,29 +2476,6 @@ export const QmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('qms_orders', JSON.stringify(updated));
     } catch (e) {}
 
-    // Record tombstone IDs in local storage & cloud to propagate deletion across all devices
-    let deletedOrders: string[] = [];
-    try {
-      deletedOrders = JSON.parse(localStorage.getItem('qms_deleted_orders') || '[]');
-    } catch (e) {}
-
-    deletedOrders = deletedOrders.filter(s => s && typeof s === 'string' && s.trim() !== '');
-
-    const tIdClean = String(targetId || '').trim().toLowerCase();
-    const tNoClean = String(targetCustomerNo || '').trim().toLowerCase();
-
-    if (tIdClean !== '' && !deletedOrders.includes(tIdClean)) {
-      deletedOrders.push(tIdClean);
-    }
-    if (tNoClean !== '' && !deletedOrders.includes(tNoClean)) {
-      deletedOrders.push(tNoClean);
-    }
-
-    try {
-      localStorage.setItem('qms_deleted_orders', JSON.stringify(deletedOrders));
-    } catch (e) {}
-
-    saveDirectToYandexDisk({ qms_deleted_orders: deletedOrders }, true);
     saveDirectToYandexDisk({ qms_orders: updated }, true);
   };
 
